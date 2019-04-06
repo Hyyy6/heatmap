@@ -29,49 +29,23 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   final RatioBloc _ratioBloc = RatioBloc();
+  final PointsBloc _pointsBloc = PointsBloc();
+  final CPBloc _cpBloc = CPBloc();
 
   @override
   Widget build(BuildContext context) {
-    return BlocProviderTree(
-        blocProviders: [BlocProvider<RatioBloc>(bloc: _ratioBloc)],
-        child: MaterialApp(title: 'Govno', home: SchemePage()));
+    return BlocProviderTree(blocProviders: [
+      BlocProvider<RatioBloc>(bloc: _ratioBloc),
+      BlocProvider<PointsBloc>(bloc: _pointsBloc),
+      BlocProvider<CPBloc>(bloc: _cpBloc)
+    ], child: MaterialApp(title: 'Govno', home: SchemePage()));
   }
 
   @override
   void dispose() {
     _ratioBloc.dispose();
-    super.dispose();
-  }
-}
-
-class _AppState_ex extends State<App> {
-  final CounterBloc _counterBloc = CounterBloc();
-  final ThemeBloc _themeBloc = ThemeBloc();
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProviderTree(
-      blocProviders: [
-        BlocProvider<CounterBloc>(bloc: _counterBloc),
-        BlocProvider<ThemeBloc>(bloc: _themeBloc)
-      ],
-      child: BlocBuilder(
-        bloc: _themeBloc,
-        builder: (_, ThemeData theme) {
-          return MaterialApp(
-            title: 'Flutter Demo',
-            home: CounterPage(),
-            theme: theme,
-          );
-        },
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _counterBloc.dispose();
-    _themeBloc.dispose();
+    _pointsBloc.dispose();
+    _cpBloc.dispose();
     super.dispose();
   }
 }
@@ -88,6 +62,8 @@ class SchemePageState extends State<SchemePage> {
   @override
   Widget build(BuildContext context) {
     final RatioBloc _ratioBloc = BlocProvider.of<RatioBloc>(context);
+    final PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
+    final CPBloc _cpBloc = BlocProvider.of<CPBloc>(context);
 
     return Scaffold(
         appBar: AppBar(title: Text('Pizdec govno')),
@@ -110,77 +86,29 @@ class SchemePageState extends State<SchemePage> {
                       double.parse(heightController.text)));
                 })
           ]),
-          BlocBuilder<Sides, double>(
-            bloc: _ratioBloc,
-            builder: (BuildContext context, double ratio) {
-              return Center(
-                child: AspectRatio(
-                    aspectRatio: ratio,
-                    child: Container(
-                      padding: EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                          shape: BoxShape.rectangle, color: Colors.black12),
-                    )),
-              );
-            },
-          )
+          Column(children: <Widget>[
+            FlatButton(
+                color: Colors.blueAccent,
+                child: Text('Add point'),
+                onPressed: () {
+                  _pointsBloc.dispatch(PointEvent(Action.add));
+                }),
+            FlatButton(
+                color: Colors.blueAccent,
+                child: Text('Measure WiFi level for currently dragged point'),
+                onPressed: () {
+                  _pointsBloc
+                      .dispatch(PointEvent.measure(_cpBloc.currentState));
+                }),
+            FlatButton(
+                color: Colors.blueAccent,
+                child: Text('Delete currently dragged point'),
+                onPressed: () {
+                  _pointsBloc.dispatch(PointEvent.delete(_cpBloc.currentState));
+                })
+          ]),
+          MyMap()
         ]));
-  }
-}
-
-class CounterPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final CounterBloc _counterBloc = BlocProvider.of<CounterBloc>(context);
-    final ThemeBloc _themeBloc = BlocProvider.of<ThemeBloc>(context);
-
-    return Scaffold(
-      appBar: AppBar(title: Text('Counter')),
-      body: BlocBuilder<CounterEvent, int>(
-        bloc: _counterBloc,
-        builder: (BuildContext context, int count) {
-          return Center(
-            child: Text(
-              '$count',
-              style: TextStyle(fontSize: 24.0),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: <Widget>[
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 5.0),
-            child: FloatingActionButton(
-              child: Icon(Icons.add),
-              onPressed: () {
-                _counterBloc.dispatch(CounterEvent.increment);
-              },
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 5.0),
-            child: FloatingActionButton(
-              child: Icon(Icons.remove),
-              onPressed: () {
-                _counterBloc.dispatch(CounterEvent.decrement);
-              },
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 5.0),
-            child: FloatingActionButton(
-              child: Icon(Icons.update),
-              onPressed: () {
-                _themeBloc.dispatch(ThemeEvent.toggle);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -201,39 +129,127 @@ class RatioBloc extends Bloc<Sides, double> {
   }
 }
 
-enum CounterEvent { increment, decrement }
+enum Action { add, delete, measure }
 
-class CounterBloc extends Bloc<CounterEvent, int> {
+class PointEvent {
+  Action action;
+  Key _key;
+
+  PointEvent(this.action);
+  PointEvent.delete(this._key) {
+    action = Action.delete;
+  }
+  PointEvent.measure(this._key) {
+    action = Action.measure;
+  }
+
+  Key get key => _key;
+}
+
+class Point extends StatefulWidget {
+  Point({Key key}) : super(key: key);
+
+  //PointState state;
   @override
-  int get initialState => 0;
+  State<StatefulWidget> createState() => PointState();
+}
+
+class PointState extends State<Point> {
+  Offset position = Offset(50.0, 50.0);
+  int wifiLvl = 0;
 
   @override
-  Stream<int> mapEventToState(CounterEvent event) async* {
-    switch (event) {
-      case CounterEvent.decrement:
-        yield currentState - 1;
+  Widget build(BuildContext context) {
+    return Positioned(
+        left: position.dx,
+        top: position.dy,
+        child: Draggable(
+            child: Container(
+                width: 10,
+                height: 10,
+                color: Colors.amber,
+                child: Text('$wifiLvl')),
+            onDragStarted: () {
+              BlocProvider.of<CPBloc>(context).dispatch(widget.key);
+            },
+            onDraggableCanceled: (velocity, offset) {
+              setState(() {
+                position = offset;
+              });
+            },
+            feedback: Container(width: 10, height: 10, color: Colors.red)));
+  }
+}
+
+class PointsBloc extends Bloc<PointEvent, List<Point>> {
+  List<Point> points;
+
+  @override
+  List<Point> get initialState => points = [];
+
+  @override
+  Stream<List<Point>> mapEventToState(PointEvent event) async* {
+    switch (event.action) {
+      case Action.add:
+        points.add(Point(key: UniqueKey()));
+        yield points;
         break;
-      case CounterEvent.increment:
-        yield currentState + 1;
+      case Action.delete:
+        for (Point point in points) {
+          if (point.key == event.key) points.remove(point);
+          break;
+        }
+        yield points;
+        break;
+      case Action.measure:
+        // TODO: measure wifi lvl
         break;
     }
   }
 }
 
-enum ThemeEvent { toggle }
-
-class ThemeBloc extends Bloc<ThemeEvent, ThemeData> {
+class CPBloc extends Bloc<Key, Key> {
   @override
-  ThemeData get initialState => ThemeData.light();
+  Key get initialState => null;
 
   @override
-  Stream<ThemeData> mapEventToState(ThemeEvent event) async* {
-    switch (event) {
-      case ThemeEvent.toggle:
-        yield currentState == ThemeData.dark()
-            ? ThemeData.light()
-            : ThemeData.dark();
-        break;
-    }
+  Stream<Key> mapEventToState(Key event) async* {
+    yield event;
+  }
+}
+
+class MyMap extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    return MyMapState();
+  }
+}
+
+class MyMapState extends State<MyMap> {
+  @override
+  Widget build(BuildContext context) {
+    PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
+    RatioBloc _ratioBloc = BlocProvider.of<RatioBloc>(context);
+    return BlocBuilder<PointEvent, List<Point>>(
+        bloc: _pointsBloc,
+        builder: (BuildContext context, List<Point> pointsList) {
+          return Center(
+              child: BlocBuilder<PointEvent, List<Point>>(
+                  bloc: _pointsBloc,
+                  builder: (BuildContext context, List<Point> pointList) {
+                    return Stack(
+                        children: <Widget>[
+                              AspectRatio(
+                                  aspectRatio: _ratioBloc.currentState,
+                                  child: Container(
+                                    padding: EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                        shape: BoxShape.rectangle,
+                                        color: Colors.black12),
+                                  )),
+                            ] +
+                            pointsList);
+                  }));
+        });
   }
 }

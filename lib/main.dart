@@ -35,9 +35,9 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return BlocProviderTree(blocProviders: [
-      BlocProvider<RatioBloc>(bloc: _ratioBloc),
       BlocProvider<PointsBloc>(bloc: _pointsBloc),
-      BlocProvider<CPBloc>(bloc: _cpBloc)
+      BlocProvider<CPBloc>(bloc: _cpBloc),
+      BlocProvider<RatioBloc>(bloc: _ratioBloc),
     ], child: MaterialApp(title: 'Govno', home: SchemePage()));
   }
 
@@ -80,6 +80,7 @@ class SchemePageState extends State<SchemePage> {
               ),
             ),
             FlatButton(
+                child: Text('Set the ratio'),
                 color: Colors.blueAccent,
                 onPressed: () {
                   _ratioBloc.dispatch(Sides(double.parse(widthController.text),
@@ -112,6 +113,57 @@ class SchemePageState extends State<SchemePage> {
   }
 }
 
+class MyMap extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    return MyMapState();
+  }
+}
+
+class MyMapState extends State<MyMap> {
+  @override
+  Widget build(BuildContext context) {
+    PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
+    RatioBloc _ratioBloc = BlocProvider.of<RatioBloc>(context);
+    return BlocBuilder<Sides, double>(
+        bloc: _ratioBloc,
+        builder: (BuildContext context, ratio) {
+          return BlocBuilder<PointEvent, List<Point>>(
+              bloc: _pointsBloc,
+              builder: (BuildContext context, List<Point> pointList) {
+                print(pointList);
+                List<Widget> widgetList = [];
+                widgetList.add(AspectRatio(
+                    aspectRatio: ratio,
+                    child: Container(
+                      padding: EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.rectangle,
+                        gradient: LinearGradient(
+                          // Where the linear gradient begins and ends
+                          begin: Alignment.topRight,
+                          end: Alignment.bottomLeft,
+                          // Add one stop for each color. Stops should increase from 0 to 1
+                          stops: [0.1, 0.5, 0.7, 0.9],
+                          colors: [
+                            // Colors are easy thanks to Flutter's Colors class.
+                            Colors.indigo[800],
+                            Colors.indigo[700],
+                            Colors.indigo[600],
+                            Colors.indigo[400],
+                          ],
+                        ),
+                      ),
+                    )));
+                widgetList.addAll(pointList);
+                return SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: Stack(children: widgetList), key: GlobalKey());
+              });
+        });
+  }
+}
+
 class Sides {
   double width;
   double height;
@@ -125,6 +177,7 @@ class RatioBloc extends Bloc<Sides, double> {
 
   @override
   Stream<double> mapEventToState(Sides event) async* {
+    print(event.width / event.height);
     yield event.width / event.height;
   }
 }
@@ -171,10 +224,18 @@ class PointState extends State<Point> {
                 child: Text('$wifiLvl')),
             onDragStarted: () {
               BlocProvider.of<CPBloc>(context).dispatch(widget.key);
+              print(position);
             },
             onDraggableCanceled: (velocity, offset) {
               setState(() {
-                position = offset;
+                print(position);
+                print(offset);
+                position = offset - Offset(0, 273);
+                if (position.dx < 0)
+                  position = Offset(0, position.dy);
+                if (position.dy < 0)
+                  position = Offset(position.dx, 0);
+                print(position);
               });
             },
             feedback: Container(width: 10, height: 10, color: Colors.red)));
@@ -182,16 +243,17 @@ class PointState extends State<Point> {
 }
 
 class PointsBloc extends Bloc<PointEvent, List<Point>> {
-  List<Point> points;
+  List<Point> points = [];
 
   @override
-  List<Point> get initialState => points = [];
+  List<Point> get initialState => points;
 
   @override
   Stream<List<Point>> mapEventToState(PointEvent event) async* {
     switch (event.action) {
       case Action.add:
         points.add(Point(key: UniqueKey()));
+        print('points bloc $points');
         yield points;
         break;
       case Action.delete:
@@ -210,46 +272,11 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
 
 class CPBloc extends Bloc<Key, Key> {
   @override
-  Key get initialState => null;
+  Key get initialState => Key('init');
 
   @override
   Stream<Key> mapEventToState(Key event) async* {
+    print(event);
     yield event;
-  }
-}
-
-class MyMap extends StatefulWidget {
-  @override
-  State<StatefulWidget> createState() {
-    return MyMapState();
-  }
-}
-
-class MyMapState extends State<MyMap> {
-  @override
-  Widget build(BuildContext context) {
-    PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
-    RatioBloc _ratioBloc = BlocProvider.of<RatioBloc>(context);
-    return BlocBuilder<PointEvent, List<Point>>(
-        bloc: _pointsBloc,
-        builder: (BuildContext context, List<Point> pointsList) {
-          return Center(
-              child: BlocBuilder<PointEvent, List<Point>>(
-                  bloc: _pointsBloc,
-                  builder: (BuildContext context, List<Point> pointList) {
-                    return Stack(
-                        children: <Widget>[
-                              AspectRatio(
-                                  aspectRatio: _ratioBloc.currentState,
-                                  child: Container(
-                                    padding: EdgeInsets.all(5),
-                                    decoration: BoxDecoration(
-                                        shape: BoxShape.rectangle,
-                                        color: Colors.black12),
-                                  )),
-                            ] +
-                            pointsList);
-                  }));
-        });
   }
 }

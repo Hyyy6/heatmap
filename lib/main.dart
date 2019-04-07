@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:bloc/bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SimpleBlocDelegate extends BlocDelegate {
@@ -94,7 +95,7 @@ class SchemePageState extends State<SchemePage> {
                 color: Colors.blueAccent,
                 child: Text('Add point'),
                 onPressed: () {
-                  _pointsBloc.dispatch(PointEvent(Action.add));
+                  _pointsBloc.dispatch(PointEvent.add());
                 }),
             FlatButton(
                 color: Colors.blueAccent,
@@ -191,7 +192,9 @@ class PointEvent {
   Action action;
   Key _key;
 
-  PointEvent(this.action);
+  PointEvent.add() {
+    action = Action.add;
+  }
   PointEvent.delete(this._key) {
     action = Action.delete;
   }
@@ -255,7 +258,19 @@ class PointState extends State<Point> {
 }
 
 class PointsBloc extends Bloc<PointEvent, List<Point>> {
-  //List<Point> points = [];
+  static const platform = const MethodChannel('com.example.heatmap/wifi');
+
+  Future<int> _getWifiLevel() async {
+    try {
+      final int result = await platform.invokeMethod('getCurWifiLevel');
+      return result;
+    } on PlatformException catch (e) {
+      print(e.details);
+      print(e.code);
+      print(e.message);
+      return null;
+    }
+  }
 
   @override
   List<Point> get initialState => [];
@@ -268,22 +283,31 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
 
   @override
   Stream<List<Point>> mapEventToState(PointEvent event) async* {
+    List<Point> newPointList = [];
+    newPointList.addAll(currentState);
+
     switch (event.action) {
       case Action.add:
-        this.currentState.add(Point(key: UniqueKey()));
-        //points.add(Point(key: UniqueKey()));
+        newPointList.add(Point(key: UniqueKey()));
         print('points bloc $currentState');
-        yield this.currentState;
+        yield newPointList;
         break;
       case Action.delete:
-        for (Point point in this.currentState) {
-          if (point.key == event.key) this.currentState.remove(point);
-          break;
+
+        for (Point point in newPointList) {
+          if (point.key == event.key) {
+            newPointList.remove(point);
+            break;
+          }
         }
-        yield this.currentState;
+        yield newPointList;
         break;
       case Action.measure:
-        // TODO: measure wifi lvl
+        Point tmpPoint = newPointList.firstWhere((point) => point.key == event.key);
+        if (tmpPoint != null) {
+          tmpPoint.wifiLvl = await _getWifiLevel();
+        }
+        yield newPointList;
         break;
     }
   }

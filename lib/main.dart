@@ -9,11 +9,13 @@ class SimpleBlocDelegate extends BlocDelegate {
   @override
   void onTransition(Transition transition) {
     print(transition);
+    super.onTransition(transition);
   }
 
   @override
   void onError(Object error, StackTrace stacktrace) {
     print(error);
+    super.onError(error, stacktrace);
   }
 }
 
@@ -123,14 +125,14 @@ class MyMap extends StatefulWidget {
 class MyMapState extends State<MyMap> {
   @override
   Widget build(BuildContext context) {
-    PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
-    RatioBloc _ratioBloc = BlocProvider.of<RatioBloc>(context);
-    return BlocBuilder<Sides, double>(
-        bloc: _ratioBloc,
-        builder: (BuildContext context, ratio) {
-          return BlocBuilder<PointEvent, List<Point>>(
-              bloc: _pointsBloc,
-              builder: (BuildContext context, List<Point> pointList) {
+    final PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
+    final RatioBloc _ratioBloc = BlocProvider.of<RatioBloc>(context);
+    return BlocBuilder<PointEvent, List<Point>>(
+        bloc: _pointsBloc,
+        builder: (BuildContext context, pointList) {
+          return BlocBuilder<Sides, double>(
+              bloc: _ratioBloc,
+              builder: (BuildContext context, ratio) {
                 print(pointList);
                 List<Widget> widgetList = [];
                 widgetList.add(AspectRatio(
@@ -157,8 +159,9 @@ class MyMapState extends State<MyMap> {
                     )));
                 widgetList.addAll(pointList);
                 return SingleChildScrollView(
-                    scrollDirection: Axis.vertical,
-                    child: Stack(children: widgetList), key: GlobalKey());
+                  scrollDirection: Axis.vertical,
+                  child: Stack(children: widgetList, key: GlobalKey()),
+                );
               });
         });
   }
@@ -173,7 +176,7 @@ class Sides {
 
 class RatioBloc extends Bloc<Sides, double> {
   @override
-  double get initialState => 1;
+  double get initialState => 16 / 9;
 
   @override
   Stream<double> mapEventToState(Sides event) async* {
@@ -201,18 +204,28 @@ class PointEvent {
 
 class Point extends StatefulWidget {
   Point({Key key}) : super(key: key);
-
-  //PointState state;
+  Offset position = Offset(50.0, 50.0);
+  int wifiLvl = 0;
+  PointState state;
   @override
-  State<StatefulWidget> createState() => PointState();
+  State<StatefulWidget> createState() => state = PointState();
 }
 
 class PointState extends State<Point> {
-  Offset position = Offset(50.0, 50.0);
-  int wifiLvl = 0;
+  var position;
+  var wifiLvl;
+
+//  @override
+//  void initState() {
+//    position = Offset(50.0, 50.0);
+//    wifiLvl = 0;
+//    super.initState();
+//  }
 
   @override
   Widget build(BuildContext context) {
+    position = widget.position;
+    wifiLvl = widget.wifiLvl;
     return Positioned(
         left: position.dx,
         top: position.dy,
@@ -230,11 +243,10 @@ class PointState extends State<Point> {
               setState(() {
                 print(position);
                 print(offset);
-                position = offset - Offset(0, 273);
-                if (position.dx < 0)
-                  position = Offset(0, position.dy);
-                if (position.dy < 0)
-                  position = Offset(position.dx, 0);
+                position = offset - Offset(0, 272);
+                if (position.dx < 0) position = Offset(0, position.dy);
+                if (position.dy < 0) position = Offset(position.dx, 0);
+                widget.position = position;
                 print(position);
               });
             },
@@ -243,25 +255,32 @@ class PointState extends State<Point> {
 }
 
 class PointsBloc extends Bloc<PointEvent, List<Point>> {
-  List<Point> points = [];
+  //List<Point> points = [];
 
   @override
-  List<Point> get initialState => points;
+  List<Point> get initialState => [];
+
+  @override
+  void onTransition(Transition<PointEvent, List<Point>> transition) {
+    print(transition);
+    super.onTransition(transition);
+  }
 
   @override
   Stream<List<Point>> mapEventToState(PointEvent event) async* {
     switch (event.action) {
       case Action.add:
-        points.add(Point(key: UniqueKey()));
-        print('points bloc $points');
-        yield points;
+        this.currentState.add(Point(key: UniqueKey()));
+        //points.add(Point(key: UniqueKey()));
+        print('points bloc $currentState');
+        yield this.currentState;
         break;
       case Action.delete:
-        for (Point point in points) {
-          if (point.key == event.key) points.remove(point);
+        for (Point point in this.currentState) {
+          if (point.key == event.key) this.currentState.remove(point);
           break;
         }
-        yield points;
+        yield this.currentState;
         break;
       case Action.measure:
         // TODO: measure wifi lvl

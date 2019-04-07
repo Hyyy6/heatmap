@@ -1,7 +1,7 @@
+//package zlp.heatmap1;
+
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-
 import 'package:bloc/bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -258,8 +258,7 @@ class PointState extends State<Point> {
 }
 
 class PointsBloc extends Bloc<PointEvent, List<Point>> {
-  static const platform = const MethodChannel('com.example.heatmap/wifi');
-
+  static const platform = const MethodChannel('zlp.heatmap1/wifi');
   Future<int> _getWifiLevel() async {
     try {
       final int result = await platform.invokeMethod('getCurWifiLevel');

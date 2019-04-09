@@ -24,7 +24,7 @@ public class MainActivity extends FlutterActivity {
                     @Override
                     public void onMethodCall(MethodCall methodCall, MethodChannel.Result result) {
                         Log.d(null, msg+'3');
-                        if (methodCall.equals("getCurWifiLevel")) {
+                        if ("getCurWifiLevel".equals(methodCall.method)) {
                             try {
                                 result.success(getCurWifiLevel());
                                 Log.d(null, msg+" success");

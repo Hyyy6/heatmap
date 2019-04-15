@@ -19,9 +19,11 @@ class PointEvent {
   PointEvent.add() {
     action = Action.add;
   }
+
   PointEvent.delete(this._key) {
     action = Action.delete;
   }
+
   PointEvent.measure(this._key) {
     action = Action.measure;
   }
@@ -34,6 +36,7 @@ class Point extends StatefulWidget {
   Offset position = Offset(50.0, 50.0);
   int wifiLvl = 0;
   PointState state;
+
   @override
   State<StatefulWidget> createState() => state = PointState();
 }
@@ -50,28 +53,28 @@ class PointState extends State<Point> {
         left: position.dx,
         top: position.dy,
         child: Draggable(
-            child: Container(
-                width: 20,
-                height: 20,
-                color: Colors.amber,
-                child: Text('$wifiLvl')),
-            onDragStarted: () {
-              BlocProvider.of<CPBloc>(context).dispatch(widget.key);
+          child: Container(
+              width: 20,
+              height: 20,
+              color: Colors.amber,
+              child: Text('$wifiLvl')),
+          onDragStarted: () {
+            BlocProvider.of<CPBloc>(context).dispatch(widget.key);
+            print(position);
+          },
+          onDraggableCanceled: (velocity, offset) {
+            setState(() {
               print(position);
-            },
-            onDraggableCanceled: (velocity, offset) {
-              setState(() {
-                print(position);
-                print(offset);
-                position = offset - Offset(0, 272);
-                if (position.dx < 0) position = Offset(0, position.dy);
-                if (position.dy < 0) position = Offset(position.dx, 0);
-                widget.position = position;
-                print(position);
-              });
-            },
-            feedback: Container(width: 10, height: 10, color: Colors.red)));
+              print(offset);
+              position = offset - Offset(0, 272);
+              if (position.dx < 0) position = Offset(0, position.dy);
+              if (position.dy < 0) position = Offset(position.dx, 0);
+              widget.position = position;
+              print(position);
+            });
+          },
+          feedback: Container(width: 25, height: 25, color: Colors.red),
+          //feedbackOffset: Offset(-5, -5),
+        ));
   }
 }
-
-

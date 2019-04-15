@@ -1,10 +1,9 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bloc/bloc.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heat_map_1/blocs.dart';
 import 'package:heat_map_1/points.dart';
+import 'package:heat_map_1/wifiDisplayer.dart';
 
 //new branch
 void main() {
@@ -77,27 +76,32 @@ class SchemePageState extends State<SchemePage> {
                       double.parse(heightController.text)));
                 })
           ]),
-          Column(children: <Widget>[
-            FlatButton(
-                color: Colors.blueAccent,
-                child: Text('Add point'),
-                onPressed: () {
-                  _pointsBloc.dispatch(PointEvent.add());
-                }),
-            FlatButton(
-                color: Colors.blueAccent,
-                child: Text('Measure WiFi level for currently dragged point'),
-                onPressed: () {
-                  _pointsBloc
-                      .dispatch(PointEvent.measure(_cpBloc.currentState));
-                }),
-            FlatButton(
-                color: Colors.blueAccent,
-                child: Text('Delete currently dragged point'),
-                onPressed: () {
-                  _pointsBloc.dispatch(PointEvent.delete(_cpBloc.currentState));
-                })
-          ]),
+          Row(
+            children: <Widget>[
+              Column(children: <Widget>[
+                FlatButton(
+                    color: Colors.blueAccent,
+                    child: Text('Add point'),
+                    onPressed: () {
+                      _pointsBloc.dispatch(PointEvent.add());
+                    }),
+                FlatButton(
+                    color: Colors.blueAccent,
+                    child: Text('Measure WiFi level for currently dragged point'),
+                    onPressed: () {
+                      _pointsBloc
+                          .dispatch(PointEvent.measure(_cpBloc.currentState));
+                    }),
+                FlatButton(
+                    color: Colors.blueAccent,
+                    child: Text('Delete currently dragged point'),
+                    onPressed: () {
+                      _pointsBloc.dispatch(PointEvent.delete(_cpBloc.currentState));
+                    })
+              ]),
+              Expanded(child: WifiDisplayer())
+            ],
+          ),
           MyMap()
         ]));
   }

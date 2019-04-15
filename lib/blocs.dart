@@ -2,21 +2,9 @@ import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:heat_map_1/points.dart';
+import 'package:heat_map_1/wifiLvlProvider.dart';
 
 class PointsBloc extends Bloc<PointEvent, List<Point>> {
-  static const platform = const MethodChannel('zlp.heatmap1/wifi');
-  Future<int> _getWifiLevel() async {
-    try {
-      final int result = await platform.invokeMethod('getCurWifiLevel');
-      return result;
-    } on PlatformException catch (e) {
-      print(e.details);
-      print(e.code);
-      print(e.message);
-      return null;
-    }
-  }
-
   @override
   List<Point> get initialState => [];
 
@@ -50,7 +38,7 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
       case Action.measure:
         Point tmpPoint = newPointList.firstWhere((point) => point.key == event.key);
         if (tmpPoint != null) {
-          tmpPoint.wifiLvl = await _getWifiLevel();
+          tmpPoint.wifiLvl = await WiFiLvlProvider.getWifiLevel();
         }
         yield newPointList;
         break;

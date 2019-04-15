@@ -1,7 +1,9 @@
 package zlp.heatmap1;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -40,9 +42,11 @@ public class MainActivity extends FlutterActivity {
         );
     }
 
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     int getCurWifiLevel() {
         Log.d(null, "zalupa 5");
         WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(WIFI_SERVICE);
+        Log.d(null, new Integer(wifiManager.getConnectionInfo().getFrequency()).toString());
         return wifiManager.getConnectionInfo().getRssi();
     }
 }

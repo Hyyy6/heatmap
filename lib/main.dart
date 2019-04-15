@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heat_map_1/blocs.dart';
 import 'package:heat_map_1/points.dart';
 
+//new branch
 void main() {
   BlocSupervisor().delegate = SimpleBlocDelegate();
   runApp(App());

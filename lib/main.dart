@@ -4,9 +4,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heat_map_1/blocs.dart';
 import 'package:heat_map_1/points.dart';
 import 'package:heat_map_1/wifiDisplayer.dart';
+import 'package:heat_map_1/wifiLvlProvider.dart';
 
-//new branch
+
+void hui() async {
+  for (int i = 0; i < 100; i++) {
+    int tmp = await WiFiLvlProvider.getWifiLevel();
+    print(tmp);
+  }
+}
+
 void main() {
+  //hui();
   BlocSupervisor().delegate = SimpleBlocDelegate();
   runApp(App());
 }
@@ -27,7 +36,7 @@ class _AppState extends State<App> {
       BlocProvider<PointsBloc>(bloc: _pointsBloc),
       BlocProvider<CPBloc>(bloc: _cpBloc),
       BlocProvider<RatioBloc>(bloc: _ratioBloc),
-    ], child: MaterialApp(title: 'Govno', home: SchemePage()));
+    ], child: MaterialApp(title: 'WiFi Heatmap', home: SchemePage()));
   }
 
   @override
@@ -55,7 +64,7 @@ class SchemePageState extends State<SchemePage> {
     final CPBloc _cpBloc = BlocProvider.of<CPBloc>(context);
 
     return Scaffold(
-        appBar: AppBar(title: Text('Pizdec govno')),
+        appBar: AppBar(title: Text('WiFi Heatmap')),
         body: Column(children: <Widget>[
           Row(children: <Widget>[
             Flexible(
@@ -140,7 +149,6 @@ class MyMapState extends State<MyMap> {
                           // Add one stop for each color. Stops should increase from 0 to 1
                           stops: [0.1, 0.5, 0.7, 0.9],
                           colors: [
-                            // Colors are easy thanks to Flutter's Colors class.
                             Colors.indigo[800],
                             Colors.indigo[700],
                             Colors.indigo[600],

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,7 +27,6 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
         yield newPointList;
         break;
       case Action.delete:
-
         for (Point point in newPointList) {
           if (point.key == event.key) {
             newPointList.remove(point);

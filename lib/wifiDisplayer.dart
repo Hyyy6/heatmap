@@ -17,29 +17,35 @@ class WifiDisplayerState extends State<WifiDisplayer> {
   void initState() {
     super.initState();
     const oneSec = const Duration(seconds: 1);
-    _fetchWifiData();
+    _fetchWifiData(10);
     Timer.periodic(oneSec, (Timer t) {
-      _fetchWifiData();
+      _fetchWifiData(10);
     });
   }
 
-  Future<void> _fetchWifiData() async {
-    const smallTimer = const Duration(milliseconds: 5);
+  // :TODO fix this shit
+  Future<void> _fetchWifiData(int times) async {
+    const millisec = const Duration(milliseconds: 1);
+
     int tmp = 0;
     int count = 0;
-    Timer(Duration(milliseconds: 900), () {
-      Timer.periodic(smallTimer, (Timer T) async {
-        tmp += await WiFiLvlProvider.getWifiLevel();
 
-        if(count % 5 == 0) print(tmp/count);
+    Timer.periodic(millisec * times, (Timer T) async {
+      if (count * times == 900) {
+        if (_wifiLvl != tmp) {
+          tmp = (tmp / count).round();
+          setState(() {
+            _wifiLvl = tmp;
+          });
+        }
+        T.cancel();
+      }
 
-        count++;
-      });
-      tmp = (tmp/count).round();
-      if(_wifiLvl != tmp)
-        setState(() {
-          _wifiLvl = tmp;
-        });
+      tmp += await WiFiLvlProvider.getWifiLevel();
+
+      //if(count % 5 == 0) print(tmp/count);
+
+      count++;
     });
   }
 

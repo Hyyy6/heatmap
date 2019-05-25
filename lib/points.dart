@@ -33,7 +33,7 @@ class PointEvent {
 
 class Point extends StatefulWidget {
   Point({Key key}) : super(key: key);
-  Offset position = Offset(50.0, 50.0);
+  //Offset position = Offset(50.0, 50.0);
   int wifiLvl = 0;
   PointState state;
 
@@ -44,37 +44,84 @@ class Point extends StatefulWidget {
 class PointState extends State<Point> {
   var position;
   var wifiLvl;
+  var size;
+
+  @override
+  void initState() {
+    position = Offset(50, 50);
+    size = Offset(20, 20);
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    position = widget.position;
     wifiLvl = widget.wifiLvl;
     return Positioned(
         left: position.dx,
         top: position.dy,
-        child: Draggable(
-          child: Container(
-              width: 20,
-              height: 20,
-              color: Colors.amber,
-              child: Text('$wifiLvl')),
-          onDragStarted: () {
-            BlocProvider.of<CPBloc>(context).dispatch(widget.key);
-            print(position);
-          },
-          onDraggableCanceled: (velocity, offset) {
-            setState(() {
-              print(position);
-              print(offset);
-              position = offset - Offset(0, 272);
-              if (position.dx < 0) position = Offset(0, position.dy);
-              if (position.dy < 0) position = Offset(position.dx, 0);
-              widget.position = position;
-              print(position);
-            });
-          },
-          feedback: Container(width: 25, height: 25, color: Colors.red),
-          //feedbackOffset: Offset(-5, -5),
-        ));
+        child: WrappedGestureDetector(widget, size, position, wifiLvl, callbackStart, callbackUpdate, callbackEnd)
+    );
+  }
+
+  void callbackStart(Offset size){
+    setState(() {
+      size = Offset(25, 25);
+    });
+  }
+
+  void callbackUpdate(Offset position, details) {
+    setState((){
+      var prevPos = position;
+      var renderBox = context.findRenderObject() as RenderBox;
+      var localPos = renderBox.globalToLocal(details.globalPosition);
+      position = localPos + prevPos;
+      print(position);
+    });
+  }
+
+  void callbackEnd(Offset size){
+    print("New position $position");
+    setState((){
+      size = Offset(20, 20);
+    });
+  }
+}
+
+class WrappedGestureDetector extends StatelessWidget {
+
+  Widget widget;
+  Offset size;
+  Offset position;
+  int wifiLvl;
+  Function(Offset) callbackStart;
+  Function(Offset, DragUpdateDetails) callbackUpdate;
+  Function(Offset) callbackEnd;
+
+
+  WrappedGestureDetector(this.widget, this.size, this.position, this.wifiLvl, this.callbackStart, this.callbackUpdate, this.callbackEnd);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+        child: Container(
+            width: size.dx,
+            height: size.dy,
+            color: Colors.amber,
+            child: Text('$wifiLvl')),
+        onTap: () {
+          BlocProvider.of<CPBloc>(context).dispatch(widget.key);
+          print(position);
+        },
+        onPanStart: (details) {
+          callbackStart(size);
+        },
+        onPanUpdate: (details) {
+          //print(localPos);
+          callbackUpdate(position, details);
+        },
+        onPanEnd: (details) {
+          callbackEnd(size);
+        }
+    );
   }
 }

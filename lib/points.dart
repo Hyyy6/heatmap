@@ -63,64 +63,75 @@ class PointState extends State<Point> {
     );
   }
 
-  void callbackStart(Offset size){
+  void callbackStart(){
     setState(() {
-      size = Offset(25, 25);
+      this.size = Offset(25, 25);
     });
   }
 
-  void callbackUpdate(Offset position, details) {
+  Offset callbackUpdate(details) {
     setState((){
-      var prevPos = position;
+      var prevPos = this.position;
       var renderBox = context.findRenderObject() as RenderBox;
       var localPos = renderBox.globalToLocal(details.globalPosition);
-      position = localPos + prevPos;
+      this.position = localPos + prevPos;
       print(position);
     });
+    return position;
   }
 
-  void callbackEnd(Offset size){
+  void callbackEnd(){
     print("New position $position");
     setState((){
-      size = Offset(20, 20);
+      this.size = Offset(20, 20);
     });
   }
 }
 
-class WrappedGestureDetector extends StatelessWidget {
+class WrappedGestureDetector extends StatefulWidget {
 
   Widget widget;
   Offset size;
   Offset position;
   int wifiLvl;
-  Function(Offset) callbackStart;
-  Function(Offset, DragUpdateDetails) callbackUpdate;
-  Function(Offset) callbackEnd;
+  Function() callbackStart;
+  Function(DragUpdateDetails) callbackUpdate;
+  Function() callbackEnd;
 
 
   WrappedGestureDetector(this.widget, this.size, this.position, this.wifiLvl, this.callbackStart, this.callbackUpdate, this.callbackEnd);
 
   @override
+  _WrappedGestureDetectorState createState() => _WrappedGestureDetectorState();
+}
+
+class _WrappedGestureDetectorState extends State<WrappedGestureDetector> {
+  Offset position;
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
         child: Container(
-            width: size.dx,
-            height: size.dy,
+            width: widget.size.dx,
+            height: widget.size.dy,
             color: Colors.amber,
-            child: Text('$wifiLvl')),
+            child: Text('${widget.wifiLvl}')),
         onTap: () {
-          BlocProvider.of<CPBloc>(context).dispatch(widget.key);
-          print(position);
+          BlocProvider.of<CPBloc>(context).dispatch(widget.widget.key);
+          print(widget.position);
         },
         onPanStart: (details) {
-          callbackStart(size);
+          widget.callbackStart();
         },
         onPanUpdate: (details) {
           //print(localPos);
-          callbackUpdate(position, details);
+          setState((){
+            position = widget.callbackUpdate(details);
+          });
+
         },
         onPanEnd: (details) {
-          callbackEnd(size);
+          widget.callbackEnd();
         }
     );
   }

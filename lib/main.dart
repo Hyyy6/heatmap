@@ -146,41 +146,48 @@ class MyMapState extends State<MyMap> {
   Widget build(BuildContext context) {
     final PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
     final RatioBloc _ratioBloc = BlocProvider.of<RatioBloc>(context);
+    final ObstacleBloc _obstacleBloc = BlocProvider.of<ObstacleBloc>(context);
     return BlocBuilder<PointEvent, List<Point>>(
         bloc: _pointsBloc,
         builder: (BuildContext context, pointList) {
-          return BlocBuilder<Sides, double>(
-              bloc: _ratioBloc,
-              builder: (BuildContext context, ratio) {
-                print(pointList);
-                List<Widget> widgetList = [];
-                widgetList.add(AspectRatio(
-                    aspectRatio: ratio,
-                    child: Container(
-                      padding: EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.rectangle,
-                        gradient: LinearGradient(
-                          // Where the linear gradient begins and ends
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                          // Add one stop for each color. Stops should increase from 0 to 1
-                          stops: [0.1, 0.5, 0.7, 0.9],
-                          colors: [
-                            Colors.indigo[800],
-                            Colors.indigo[700],
-                            Colors.indigo[600],
-                            Colors.indigo[400],
-                          ],
-                        ),
-                      ),
-                    )));
-                widgetList.addAll(pointList);
-                return SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: Stack(children: widgetList, key: GlobalKey()),
-                );
+            return BlocBuilder<ObstacleEvent, List<Obstacle>>(
+                bloc: _obstacleBloc,
+                builder: (BuildContext context, obstacleList) {
+                      return BlocBuilder<Sides, double>(
+                          bloc: _ratioBloc,
+                          builder: (BuildContext context, ratio) {
+                            print(pointList);
+                            List<Widget> widgetList = [];
+                            widgetList.add(AspectRatio(
+                                aspectRatio: ratio,
+                                child: Container(
+                                  padding: EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.rectangle,
+                                    gradient: LinearGradient(
+                                      // Where the linear gradient begins and ends
+                                      begin: Alignment.topRight,
+                                      end: Alignment.bottomLeft,
+                                      // Add one stop for each color. Stops should increase from 0 to 1
+                                      stops: [0.1, 0.5, 0.7, 0.9],
+                                      colors: [
+                                        Colors.indigo[800],
+                                        Colors.indigo[700],
+                                        Colors.indigo[600],
+                                        Colors.indigo[400],
+                                      ],
+                                    ),
+                                  ),
+                                )));
+                            widgetList.addAll(pointList);
+                            obstacleList.forEach((Obstacle obstacle) {
+                              widgetList.addAll(obstacle.getWidgets());
+                            });
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.vertical,
+                              child: Stack(children: widgetList, key: GlobalKey()),
+                            );
+                          });
+                    });
               });
-        });
   }
-}

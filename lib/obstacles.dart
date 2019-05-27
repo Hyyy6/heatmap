@@ -20,62 +20,61 @@ class ObstacleEvent {
   }
 }
 
-class Obstacle extends StatefulWidget {
-  Obstacle({Key key}) : super(key: key);
+class Obstacle {
 
-  @override
-  State<StatefulWidget> createState() {
-    return ObstacleState();
-  }
-}
-
-class ObstacleState extends State<Obstacle> {
+  Key key;
   double signalLossCoeff;
   Offset boxSize;
   List<Offset> verticesCoords;
   List<ObstacleVertex> vertices;
   Offset position;
+  ObstacleLinePainter linePainter;
 
-  @override
-  void initState() {
+  List<Widget> getWidgets() {
+    List<Widget> list = [];
+    list.addAll(vertices);
+    list.add(linePainter);
+    return list;
+  }
+
+  Obstacle(this.key) {
     signalLossCoeff = 0;
     boxSize = Offset(40, 40);
     verticesCoords.addAll([Offset(50, 50), Offset(60, 50), Offset(60, 60), Offset(50, 60)]);
     vertices = [
-      ObstacleVertex(0, widget.key, callback, verticesCoords[0]),
-      ObstacleVertex(1, widget.key, callback, verticesCoords[1]),
-      ObstacleVertex(2, widget.key, callback, verticesCoords[2]),
-      ObstacleVertex(3, widget.key, callback, verticesCoords[3]),
+      ObstacleVertex(0, key, callback, verticesCoords[0]),
+      ObstacleVertex(1, key, callback, verticesCoords[1]),
+      ObstacleVertex(2, key, callback, verticesCoords[2]),
+      ObstacleVertex(3, key, callback, verticesCoords[3]),
     ];
     position = Offset(50, 50);
-    super.initState();
+    linePainter = ObstacleLinePainter();
+    //painter = ObstaclePainter();
   }
 
-  Offset _calcPaintSize(){
-
+  void _calcPaintSize(){
+    double minX, minY, maxX, maxY;
+    minX = verticesCoords[0].dx;
+    minY = verticesCoords[0].dy;
+    maxX = verticesCoords[0].dx;
+    maxY = verticesCoords[0].dy;
+    for(int i = 0; i < 4; i++) {
+      if(verticesCoords[i].dx < minX)
+        minX = verticesCoords[i].dx;
+      if(verticesCoords[i].dx < minX)
+        minY = verticesCoords[i].dy;
+      if(verticesCoords[i].dx > maxX)
+        maxX = verticesCoords[i].dx;
+      if(verticesCoords[i].dx > maxY)
+        maxY = verticesCoords[i].dy;
+    }
+    linePainter.getCallback(Offset(minX, minY), Offset((maxX - minX), (maxY - minY)), verticesCoords);
   }
-  @override
-  Widget build(BuildContext context) {
-    List<Widget> widgetList = [];
-    widgetList.addAll(vertices);
-    widgetList.add(CustomPaint(
-      chi
-    ));
-    return Positioned(
-      left: position.dx,
-      top: position.dy,
-      child: Stack(
-        children: widgetList
 
-      ));
-  }
 
   void callback(Offset _position, int id) {
-    setState(() {
-      if (id == 0)
-        position = _position;
-      verticesCoords[id] = _position;
-    });
+    verticesCoords[id] = _position;
+    _calcPaintSize();
   }
 
 }
@@ -122,24 +121,87 @@ class ObstacleVertexState extends State<ObstacleVertex> {
             this.position = localPos + prevPos;
             print(position);
           });
-          widget.callback(position);
+          widget.callback(position, widget.id);
         },
       )
     );
   }
 }
 
-class ObstaclePainter extends CustomPainter {
+class ObstacleLinePainter extends StatefulWidget {
 
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    // TODO: implement shouldRepaint
-    return null;
+
+  ObstacleLinePainterState state;
+
+  void getCallback(Offset _position, Offset _size, List<Offset> coords) {
+    return state.callback(_position, _size, coords);
   }
 
   @override
+  State<StatefulWidget> createState() {
+    state = ObstacleLinePainterState();
+    return state;
+  }
+}
+
+class ObstacleLinePainterState extends State<ObstacleLinePainter> {
+  Offset position;
+  Offset size;
+  List<Offset> pointsCoords;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
+  void callback(Offset _position, Offset _size, List<Offset> coords) {
+    setState(() {
+      position = _position;
+      size = _size;
+      pointsCoords = coords;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    return Positioned(
+      left: position.dx,
+      top: position.dy,
+      child: CustomPaint(
+        child: Opacity(
+          opacity: 1.0,
+          child: Container(
+            width: size.dx,
+            height: size.dy,
+          ),
+        ),
+        foregroundPainter: MyPainter(pointsCoords),
+      ),
+
+
+    );
+  }
+}
+
+class MyPainter extends CustomPainter {
+  List<Offset> points;
+  
+  MyPainter(this.points);
+  
+  @override
   void paint(Canvas canvas, Size size) {
-    // TODO: implement paint
-    canvas.
+    Paint paint = Paint();
+    paint.color = Colors.black;
+    canvas..drawLine(points[0], points[1], paint)
+      ..drawLine(points[1], points[2], paint)
+      ..drawLine(points[2], points[3], paint)
+      ..drawLine(points[3], points[0], paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return oldDelegate != this;
   }
 }

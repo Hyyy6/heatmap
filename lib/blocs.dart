@@ -58,7 +58,7 @@ class ObstacleBloc extends Bloc<ObstacleEvent, List<Obstacle>> {
 
     switch (event.action) {
       case ObstacleAction.add:
-        newObstacleList.add(Obstacle(key: UniqueKey()));
+        newObstacleList.add(Obstacle(UniqueKey()));
         print('points bloc $currentState');
         yield newObstacleList;
         break;

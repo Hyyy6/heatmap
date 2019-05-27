@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:bloc/bloc.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heat_map_1/blocs.dart';
+import 'package:heat_map_1/obstacles.dart';
 import 'package:heat_map_1/points.dart';
 import 'package:heat_map_1/wifiDisplayer.dart';
 import 'package:heat_map_1/wifiLvlProvider.dart';
@@ -29,6 +30,7 @@ class _AppState extends State<App> {
   final RatioBloc _ratioBloc = RatioBloc();
   final PointsBloc _pointsBloc = PointsBloc();
   final CPBloc _cpBloc = CPBloc();
+  final ObstacleBloc _obstacleBloc = ObstacleBloc();
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +38,7 @@ class _AppState extends State<App> {
       BlocProvider<PointsBloc>(bloc: _pointsBloc),
       BlocProvider<CPBloc>(bloc: _cpBloc),
       BlocProvider<RatioBloc>(bloc: _ratioBloc),
+      BlocProvider<ObstacleBloc>(bloc: _obstacleBloc)
     ], child: MaterialApp(title: 'WiFi Heatmap', home: SchemePage()));
   }
 
@@ -62,6 +65,7 @@ class SchemePageState extends State<SchemePage> {
     final RatioBloc _ratioBloc = BlocProvider.of<RatioBloc>(context);
     final PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
     final CPBloc _cpBloc = BlocProvider.of<CPBloc>(context);
+    final ObstacleBloc _obstacleBloc = BlocProvider.of<ObstacleBloc>(context);
 
     return Scaffold(
         appBar: AppBar(title: Text('WiFi Heatmap')),
@@ -103,10 +107,24 @@ class SchemePageState extends State<SchemePage> {
                     }),
                 FlatButton(
                     color: Colors.blueAccent,
-                    child: Text('Delete currently dragged point'),
+                    child: Text('Delete currently dragged point/obstacle'),
                     onPressed: () {
                       _pointsBloc.dispatch(PointEvent.delete(_cpBloc.currentState));
                     })
+              ]),
+              Column(children: <Widget>[
+                FlatButton(
+                    color: Colors.blueAccent,
+                    child: Text('Add obstacle'),
+                    onPressed: () {
+                      _obstacleBloc.dispatch(ObstacleEvent.add());
+                    }),
+                FlatButton(
+                    color: Colors.blueAccent,
+                    child: Text('Delete obstacle'),
+                    onPressed: () {
+                      _obstacleBloc.dispatch(ObstacleEvent.delete(_cpBloc.currentState));
+                    }),
               ]),
               Expanded(child: WifiDisplayer())
             ],

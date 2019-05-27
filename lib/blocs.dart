@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:heat_map_1/obstacles.dart';
 import 'package:heat_map_1/points.dart';
 import 'package:heat_map_1/wifiLvlProvider.dart';
 
@@ -21,12 +22,12 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
     newPointList.addAll(currentState);
 
     switch (event.action) {
-      case Action.add:
+      case PointsAction.add:
         newPointList.add(Point(key: UniqueKey()));
         print('points bloc $currentState');
         yield newPointList;
         break;
-      case Action.delete:
+      case PointsAction.delete:
         for (Point point in newPointList) {
           if (point.key == event.key) {
             newPointList.remove(point);
@@ -35,12 +36,40 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
         }
         yield newPointList;
         break;
-      case Action.measure:
+      case PointsAction.measure:
         Point tmpPoint = newPointList.firstWhere((point) => point.key == event.key);
         if (tmpPoint != null) {
           tmpPoint.wifiLvl = await WiFiLvlProvider.getWifiLevel();
         }
         yield newPointList;
+        break;
+    }
+  }
+}
+
+class ObstacleBloc extends Bloc<ObstacleEvent, List<Obstacle>> {
+  @override
+  List<Obstacle> get initialState => [];
+
+  @override
+  Stream<List<Obstacle>> mapEventToState(ObstacleEvent event) async* {
+    List<Obstacle> newObstacleList = [];
+    newObstacleList.addAll(currentState);
+
+    switch (event.action) {
+      case ObstacleAction.add:
+        newObstacleList.add(Obstacle(key: UniqueKey()));
+        print('points bloc $currentState');
+        yield newObstacleList;
+        break;
+      case ObstacleAction.delete:
+        for (Obstacle obstacle in newObstacleList) {
+          if (obstacle.key == event.key) {
+            newObstacleList.remove(obstacle);
+            break;
+          }
+        }
+        yield newObstacleList;
         break;
     }
   }
@@ -67,6 +96,8 @@ class RatioBloc extends Bloc<Sides, double> {
     yield event.width / event.height;
   }
 }
+
+
 
 
 class SimpleBlocDelegate extends BlocDelegate {

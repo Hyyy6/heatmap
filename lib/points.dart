@@ -10,22 +10,22 @@ class Sides {
   Sides(this.width, this.height);
 }
 
-enum Action { add, delete, measure }
+enum PointsAction { add, delete, measure }
 
 class PointEvent {
-  Action action;
+  PointsAction action;
   Key _key;
 
   PointEvent.add() {
-    action = Action.add;
+    action = PointsAction.add;
   }
 
   PointEvent.delete(this._key) {
-    action = Action.delete;
+    action = PointsAction.delete;
   }
 
   PointEvent.measure(this._key) {
-    action = Action.measure;
+    action = PointsAction.measure;
   }
 
   Key get key => _key;

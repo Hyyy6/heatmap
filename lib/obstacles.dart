@@ -3,11 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:heat_map_1/blocs.dart';
 
 
-enum ObstacleAction {add, delete}
+enum ObstacleAction {add, delete, calibrate}
 
 class ObstacleEvent {
   ObstacleAction action;
   Key _key;
+  double lossCoef;
 
   Key get key => _key;
 
@@ -18,12 +19,16 @@ class ObstacleEvent {
   ObstacleEvent.delete(this._key){
     action = ObstacleAction.delete;
   }
+
+  ObstacleEvent.calibrate(this._key, this.lossCoef) {
+    action = ObstacleAction.calibrate;
+  }
 }
 
 class Obstacle {
 
   Key key;
-  double signalLossCoeff;
+  double signalLossCoeff = 0;
   Offset boxSize;
   List<Offset> verticesCoords = [];
   List<ObstacleVertex> vertices = [];

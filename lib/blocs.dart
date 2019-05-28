@@ -51,6 +51,9 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
         }
         yield newPointList;
         break;
+      case PointsAction.force:
+        yield newPointList;
+        break;
     }
   }
 }
@@ -86,6 +89,14 @@ class ObstacleBloc extends Bloc<ObstacleEvent, List<Obstacle>> {
         }
         yield newObstacleList;
         break;
+      case ObstacleAction.calibrate:
+        for (Obstacle obstacle in newObstacleList) {
+          print(obstacle.key.toString());
+          if (obstacle.key == event.key) {
+            obstacle.signalLossCoeff = event.lossCoef;
+            break;
+          }
+        }
     }
   }
 }
@@ -112,7 +123,15 @@ class RatioBloc extends Bloc<Sides, double> {
   }
 }
 
+class ModelEngagedBloc extends Bloc<bool, bool> {
+  @override
+  bool get initialState => false;
 
+  @override
+  Stream<bool> mapEventToState(bool event) async* {
+    yield !currentState;
+  }
+}
 
 
 class SimpleBlocDelegate extends BlocDelegate {

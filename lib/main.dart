@@ -25,40 +25,65 @@ void hui() {
       S[i] = 0;
       continue;
     } else {
-      S[i] = S[i-1] + 1/2*
-          (xyPairArr[i].item2+xyPairArr[i-1].item2)*
-          (xyPairArr[i].item1-xyPairArr[i-1].item1);
+      S[i] = S[i - 1] +
+          1 /
+              2 *
+              (xyPairArr[i].item2 + xyPairArr[i - 1].item2) *
+              (xyPairArr[i].item1 - xyPairArr[i - 1].item1);
     }
   }
-  double sum_y_i_2 = 0, sum_x_y_i = 0, sum_y_i = 0, sum_x_i_2 = 0, sum_x_i = 0, sum_s_x_y_y = 0, sum_s_x_y_x = 0, sum_x_y = 0;
+  double sum_y_i_2 = 0,
+      sum_x_y_i = 0,
+      sum_y_i = 0,
+      sum_x_i_2 = 0,
+      sum_x_i = 0,
+      sum_s_x_y_y = 0,
+      sum_s_x_y_x = 0,
+      sum_x_y = 0;
   for (int i = 0; i < n; i++) {
-    sum_y_i_2 += xyPairArr[i].item2*xyPairArr[i].item2;
-    sum_x_y_i += xyPairArr[i].item1*xyPairArr[i].item2;
+    sum_y_i_2 += xyPairArr[i].item2 * xyPairArr[i].item2;
+    sum_x_y_i += xyPairArr[i].item1 * xyPairArr[i].item2;
     sum_y_i += xyPairArr[i].item2;
-    sum_x_i_2 += xyPairArr[i].item1*xyPairArr[i].item1;
+    sum_x_i_2 += xyPairArr[i].item1 * xyPairArr[i].item1;
     sum_x_i += xyPairArr[i].item1;
-    sum_s_x_y_y += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2)*xyPairArr[i].item2;
-    sum_s_x_y_x += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2)*xyPairArr[i].item1;
-    sum_x_y += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2);
+    sum_s_x_y_y +=
+        -(S[i] + xyPairArr[i].item1 * xyPairArr[i].item2) * xyPairArr[i].item2;
+    sum_s_x_y_x +=
+        -(S[i] + xyPairArr[i].item1 * xyPairArr[i].item2) * xyPairArr[i].item1;
+    sum_x_y += -(S[i] + xyPairArr[i].item1 * xyPairArr[i].item2);
   }
   Matrix amatx = SquareMatrix([
     [sum_y_i_2, sum_x_y_i, sum_y_i],
     [sum_x_y_i, sum_x_i_2, sum_x_i],
-    [sum_y_i, sum_x_i, n]]).inverse().
-  matrixProduct(Matrix([[sum_s_x_y_y],[sum_s_x_y_x], [sum_x_y]]));
+    [sum_y_i, sum_x_i, n]
+  ]).inverse().matrixProduct(Matrix([
+        [sum_s_x_y_y],
+        [sum_s_x_y_x],
+        [sum_x_y]
+      ]));
 
   print(amatx.itemAt(1, 1));
   aEq = amatx.itemAt(1, 1).toDouble();
 
   double sum_x_i_a_4 = 0, sum_x_i_a_2 = 0, sum_y_x_i_a_2 = 0;
   for (int i = 0; i < n; i++) {
-    sum_x_i_a_4 += 1/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq));
-    sum_x_i_a_2 += 1/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq));
-    sum_y_x_i_a_2 += xyPairArr[i].item2/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq));
+    sum_x_i_a_4 += 1 /
+        ((xyPairArr[i].item1 + aEq) *
+            (xyPairArr[i].item1 + aEq) *
+            (xyPairArr[i].item1 + aEq) *
+            (xyPairArr[i].item1 + aEq));
+    sum_x_i_a_2 +=
+        1 / ((xyPairArr[i].item1 + aEq) * (xyPairArr[i].item1 + aEq));
+    sum_y_x_i_a_2 += xyPairArr[i].item2 /
+        ((xyPairArr[i].item1 + aEq) * (xyPairArr[i].item1 + aEq));
   }
-  Matrix cbmatx = SquareMatrix([[sum_x_i_a_4, -sum_x_i_a_2],
-    [-sum_x_i_a_2, n]]).inverse().matrixProduct(Matrix([[sum_y_x_i_a_2],
-    [-sum_y_i]]));
+  Matrix cbmatx = SquareMatrix([
+    [sum_x_i_a_4, -sum_x_i_a_2],
+    [-sum_x_i_a_2, n]
+  ]).inverse().matrixProduct(Matrix([
+        [sum_y_x_i_a_2],
+        [-sum_y_i]
+      ]));
 
   cEq = cbmatx.itemAt(1, 1).toDouble();
   bEq = cbmatx.itemAt(2, 1).toDouble();
@@ -67,6 +92,8 @@ void hui() {
   print(bEq);
 }
 
+
+double aEq, bEq, cEq;
 
 void main() {
   //hui();
@@ -84,6 +111,7 @@ class _AppState extends State<App> {
   final PointsBloc _pointsBloc = PointsBloc();
   final CPBloc _cpBloc = CPBloc();
   final ObstacleBloc _obstacleBloc = ObstacleBloc();
+  final ModelEngagedBloc _modelEngagedBloc = ModelEngagedBloc();
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +119,8 @@ class _AppState extends State<App> {
       BlocProvider<PointsBloc>(bloc: _pointsBloc),
       BlocProvider<CPBloc>(bloc: _cpBloc),
       BlocProvider<RatioBloc>(bloc: _ratioBloc),
-      BlocProvider<ObstacleBloc>(bloc: _obstacleBloc)
+      BlocProvider<ObstacleBloc>(bloc: _obstacleBloc),
+      BlocProvider<ModelEngagedBloc>(bloc: _modelEngagedBloc)
     ], child: MaterialApp(title: 'WiFi Heatmap', home: SchemePage()));
   }
 
@@ -110,9 +139,15 @@ class SchemePage extends StatefulWidget {
 }
 
 class SchemePageState extends State<SchemePage> {
-  double aEq, bEq, cEq;
+  bool modelEngaged;
   TextEditingController widthController = TextEditingController();
   TextEditingController heightController = TextEditingController();
+
+  @override
+  void initState() {
+    modelEngaged = false;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,10 +155,35 @@ class SchemePageState extends State<SchemePage> {
     final PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
     final CPBloc _cpBloc = BlocProvider.of<CPBloc>(context);
     final ObstacleBloc _obstacleBloc = BlocProvider.of<ObstacleBloc>(context);
+    final ModelEngagedBloc _modelEngagedBloc = BlocProvider.of<ModelEngagedBloc>(context);
 
     return Scaffold(
         appBar: AppBar(title: Text('WiFi Heatmap')),
         body: Column(children: <Widget>[
+          Row(children: <Widget>[
+            FlatButton(
+                child: Text('Cal. router'),
+                color: Colors.blueAccent,
+                onPressed: () {
+                  setState(() {
+                    calibrateRouter(_pointsBloc);
+                  });
+                }),
+            FlatButton(
+                child: Text('Cal. obstcls'),
+                color: Colors.blueAccent,
+                onPressed: () {
+                  setState(() {
+                    calibrateObstacles(_pointsBloc, _obstacleBloc);
+                  });
+                }),
+            FlatButton(
+                child: Text('Engage model'),
+                color: Colors.blueAccent,
+                onPressed: () {
+                  calibrateRouter(_pointsBloc);
+                })
+          ]),
           Row(children: <Widget>[
             Flexible(
               child: TextField(
@@ -142,12 +202,6 @@ class SchemePageState extends State<SchemePage> {
                   _ratioBloc.dispatch(Sides(double.parse(widthController.text),
                       double.parse(heightController.text)));
                 }),
-            FlatButton(
-                child: Text('Cal. router'),
-                color: Colors.blueAccent,
-                onPressed: () {
-                  calibrate(_pointsBloc);
-                })
           ]),
           Row(
             children: <Widget>[
@@ -195,7 +249,7 @@ class SchemePageState extends State<SchemePage> {
         ]));
   }
 
-  void calibrate(PointsBloc pointsBloc) {
+  void calibrateRouter(PointsBloc pointsBloc) {
     List<Point> pointList = pointsBloc.currentState;
     String routerKey = pointsBloc.routerKey;
     Offset routerOffset = pointList
@@ -222,7 +276,9 @@ class SchemePageState extends State<SchemePage> {
             }
           }
         });
-    xyPairArr.sort((a, b) {a.item1.compareTo(b.item1);});
+    xyPairArr.sort((a, b) {
+      a.item1.compareTo(b.item1);
+    });
 
     List<double> S = List(n);
 
@@ -231,45 +287,106 @@ class SchemePageState extends State<SchemePage> {
         S[i] = 0;
         continue;
       } else {
-        S[i] = S[i-1] + 1/2*
-            (xyPairArr[i].item2+xyPairArr[i-1].item2)*
-            (xyPairArr[i].item1-xyPairArr[i-1].item1);
+        S[i] = S[i - 1] +
+            1 /
+                2 *
+                (xyPairArr[i].item2 + xyPairArr[i - 1].item2) *
+                (xyPairArr[i].item1 - xyPairArr[i - 1].item1);
       }
     }
-    double sum_y_i_2 = 0, sum_x_y_i = 0, sum_y_i = 0, sum_x_i_2 = 0, sum_x_i = 0, sum_s_x_y_y = 0, sum_s_x_y_x = 0, sum_x_y = 0;
+    double sum_y_i_2 = 0,
+        sum_x_y_i = 0,
+        sum_y_i = 0,
+        sum_x_i_2 = 0,
+        sum_x_i = 0,
+        sum_s_x_y_y = 0,
+        sum_s_x_y_x = 0,
+        sum_x_y = 0;
     for (int i = 0; i < n; i++) {
-      sum_y_i_2 += xyPairArr[i].item2*xyPairArr[i].item2;
-      sum_x_y_i += xyPairArr[i].item1*xyPairArr[i].item2;
+      sum_y_i_2 += xyPairArr[i].item2 * xyPairArr[i].item2;
+      sum_x_y_i += xyPairArr[i].item1 * xyPairArr[i].item2;
       sum_y_i += xyPairArr[i].item2;
-      sum_x_i_2 += xyPairArr[i].item1*xyPairArr[i].item1;
+      sum_x_i_2 += xyPairArr[i].item1 * xyPairArr[i].item1;
       sum_x_i += xyPairArr[i].item1;
-      sum_s_x_y_y += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2)*xyPairArr[i].item2;
-      sum_s_x_y_x += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2)*xyPairArr[i].item1;
-      sum_x_y += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2);
+      sum_s_x_y_y += -(S[i] + xyPairArr[i].item1 * xyPairArr[i].item2) *
+          xyPairArr[i].item2;
+      sum_s_x_y_x += -(S[i] + xyPairArr[i].item1 * xyPairArr[i].item2) *
+          xyPairArr[i].item1;
+      sum_x_y += -(S[i] + xyPairArr[i].item1 * xyPairArr[i].item2);
     }
     Matrix amatx = SquareMatrix([
       [sum_y_i_2, sum_x_y_i, sum_y_i],
       [sum_x_y_i, sum_x_i_2, sum_x_i],
-      [sum_y_i, sum_x_i, n]]).inverse().
-      matrixProduct(Matrix([[sum_s_x_y_y], [sum_s_x_y_x], [sum_x_y]]));
+      [sum_y_i, sum_x_i, n]
+    ]).inverse().matrixProduct(Matrix([
+          [sum_s_x_y_y],
+          [sum_s_x_y_x],
+          [sum_x_y]
+        ]));
 
     print(amatx.itemAt(1, 1));
     aEq = amatx.itemAt(1, 1);
 
     double sum_x_i_a_4 = 0, sum_x_i_a_2 = 0, sum_y_x_i_a_2 = 0;
     for (int i = 0; i < n; i++) {
-      sum_x_i_a_4 += 1/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq));
-      sum_x_i_a_2 += 1/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1));
-      sum_y_x_i_a_2 += xyPairArr[i].item2/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1));
+      sum_x_i_a_4 += 1 /
+          ((xyPairArr[i].item1 + aEq) *
+              (xyPairArr[i].item1 + aEq) *
+              (xyPairArr[i].item1 + aEq) *
+              (xyPairArr[i].item1 + aEq));
+      sum_x_i_a_2 += 1 / ((xyPairArr[i].item1 + aEq) * (xyPairArr[i].item1));
+      sum_y_x_i_a_2 += xyPairArr[i].item2 /
+          ((xyPairArr[i].item1 + aEq) * (xyPairArr[i].item1));
     }
-    Matrix cbmatx = SquareMatrix([[sum_x_i_a_4, -sum_x_i_a_2],
-    [-sum_x_i_a_2, n]]).inverse().matrixProduct(Matrix([[sum_y_x_i_a_2],
-    [-sum_y_i]]));
+    Matrix cbmatx = SquareMatrix([
+      [sum_x_i_a_4, -sum_x_i_a_2],
+      [-sum_x_i_a_2, n]
+    ]).inverse().matrixProduct(Matrix([
+          [sum_y_x_i_a_2],
+          [-sum_y_i]
+        ]));
 
     cEq = cbmatx.itemAt(1, 1);
     bEq = cbmatx.itemAt(1, 2);
     print(cEq);
     print(bEq);
+  }
+
+  void calibrateObstacles(PointsBloc pointsBloc, ObstacleBloc obstacleBloc) {
+    List<Point> pointList = pointsBloc.currentState;
+    List<Obstacle> obstList = obstacleBloc.currentState;
+    String routerKey = pointsBloc.routerKey;
+    Offset routerOffset = pointList
+        .firstWhere((point) => point.key.toString() == routerKey)
+        .state
+        .position;
+    double routerLvl = pointList
+        .firstWhere((point) => point.key.toString() == routerKey)
+        .wifiLvl
+        .toDouble();
+    pointList.removeWhere(
+        (point) => point.key.toString() == routerKey); //list w\o router
+    pointList.sort((Point a, Point b) {
+      LogicHelper.calcDistance(a.state.position, routerOffset)
+          .compareTo(LogicHelper.calcDistance(b.state.position, routerOffset));
+    }); //sorted with respect to the distance to the router
+    pointList.forEach((point) {
+      var lvl = LogicHelper.calcLvl(aEq, bEq, cEq, routerOffset, point.state.position);
+      var tempObsts =
+      LogicHelper.getIntercectedObsts(obstList, point.state.position, routerOffset);
+      tempObsts.forEach((obstacle) {
+        if (obstacle.signalLossCoeff != 0) {
+          lvl -= obstacle.signalLossCoeff;
+        }
+      });
+      tempObsts.removeWhere((obstacle) => obstacle.signalLossCoeff == 0);
+      var sharedCoef =
+          (lvl - point.wifiLvl)/tempObsts.length;
+      tempObsts.forEach((obstacle) {
+        obstacleBloc.dispatch(ObstacleEvent.calibrate(obstacle.key, sharedCoef));
+      });
+    });
+
   }
 }
 
@@ -326,5 +443,71 @@ class MyMapState extends State<MyMap> {
                     });
               });
         });
+  }
+}
+
+class LogicHelper {
+  static bool onSegment(Offset p, Offset q, Offset r) {
+    if (q.dx <= max(p.dx, r.dx) &&
+        q.dx >= min(p.dx, r.dx) &&
+        q.dy <= max(p.dy, r.dy) &&
+        q.dy >= min(p.dy, r.dy)) return true;
+
+    return false;
+  }
+
+  static int orientation(Offset p, Offset q, Offset r) {
+    double val = (q.dy - p.dy) * (r.dx - q.dx) - (q.dx - p.dx) * (r.dy - q.dy);
+
+    if (val.abs() <= 0.001) return 0; // colinear
+
+    return (val > 0) ? 1 : 2;
+  }
+
+  static bool doIntersect(Offset p1, Offset q1, Offset p2, Offset q2) {
+    // Find the four orientations needed for general and
+    // special cases
+    int o1 = orientation(p1, q1, p2);
+    int o2 = orientation(p1, q1, q2);
+    int o3 = orientation(p2, q2, p1);
+    int o4 = orientation(p2, q2, q1);
+
+    // General case
+    if (o1 != o2 && o3 != o4) return true;
+
+    // Special Cases
+    // p1, q1 and p2 are colinear and p2 lies on segment p1q1
+    if (o1 == 0 && onSegment(p1, p2, q1)) return true;
+
+    // p1, q1 and q2 are colinear and q2 lies on segment p1q1
+    if (o2 == 0 && onSegment(p1, q2, q1)) return true;
+
+    // p2, q2 and p1 are colinear and p1 lies on segment p2q2
+    if (o3 == 0 && onSegment(p2, p1, q2)) return true;
+
+    // p2, q2 and q1 are colinear and q1 lies on segment p2q2
+    if (o4 == 0 && onSegment(p2, q1, q2)) return true;
+
+    return false; // Doesn't fall in any of the above cases
+  }
+
+  static double calcDistance(Offset p1, Offset p2) {
+    return sqrt(pow((p1.dx - p2.dx), 2) + pow((p1.dy - p2.dy), 2));
+  }
+
+  static double calcLvl(double a, double b, double k, Offset router, Offset point) {
+    return k / (pow((calcDistance(router, point) + a), 2)) - b;
+  }
+
+  static List<Obstacle> getIntercectedObsts(List<Obstacle> obstList, Offset point, Offset router) {
+    List<Obstacle> result = [];
+
+    obstList.forEach((obstacle) {
+      for (int i = 0; i < 4; i++) {
+        if (LogicHelper.doIntersect(point, router, obstacle.verticesCoords[i],
+            obstacle.verticesCoords[(i + 1) % 4])) result.add(obstacle);
+      }
+    });
+    return result;
   }
 }

@@ -6,14 +6,67 @@ import 'package:heat_map_1/obstacles.dart';
 import 'package:heat_map_1/points.dart';
 import 'package:heat_map_1/wifiDisplayer.dart';
 import 'package:heat_map_1/wifiLvlProvider.dart';
+import 'package:extended_math/extended_math.dart';
+import 'package:tuple/tuple.dart';
 
+void hui() {
+  double aEq, bEq, cEq;
+  int n = 4;
+  List<Tuple2<double, double>> xyPairArr = [];
+  xyPairArr.add(Tuple2<double, double>(0, -23));
+  xyPairArr.add(Tuple2<double, double>(1, -32));
+  xyPairArr.add(Tuple2<double, double>(2, -38));
+  xyPairArr.add(Tuple2<double, double>(3, -40));
 
-void hui() async {
-  for (int i = 0; i < 100; i++) {
-    int tmp = await WiFiLvlProvider.getWifiLevel();
-    print(tmp);
+  List<double> S = List(n);
+
+  for (int i = 0; i < n; i++) {
+    if (i == 0) {
+      S[i] = 0;
+      continue;
+    } else {
+      S[i] = S[i-1] + 1/2*
+          (xyPairArr[i].item2+xyPairArr[i-1].item2)*
+          (xyPairArr[i].item1-xyPairArr[i-1].item1);
+    }
   }
+  double sum_y_i_2 = 0, sum_x_y_i = 0, sum_y_i = 0, sum_x_i_2 = 0, sum_x_i = 0, sum_s_x_y_y = 0, sum_s_x_y_x = 0, sum_x_y = 0;
+  for (int i = 0; i < n; i++) {
+    sum_y_i_2 += xyPairArr[i].item2*xyPairArr[i].item2;
+    sum_x_y_i += xyPairArr[i].item1*xyPairArr[i].item2;
+    sum_y_i += xyPairArr[i].item2;
+    sum_x_i_2 += xyPairArr[i].item1*xyPairArr[i].item1;
+    sum_x_i += xyPairArr[i].item1;
+    sum_s_x_y_y += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2)*xyPairArr[i].item2;
+    sum_s_x_y_x += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2)*xyPairArr[i].item1;
+    sum_x_y += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2);
+  }
+  Matrix amatx = SquareMatrix([
+    [sum_y_i_2, sum_x_y_i, sum_y_i],
+    [sum_x_y_i, sum_x_i_2, sum_x_i],
+    [sum_y_i, sum_x_i, n]]).inverse().
+  matrixProduct(Matrix([[sum_s_x_y_y],[sum_s_x_y_x], [sum_x_y]]));
+
+  print(amatx.itemAt(1, 1));
+  aEq = amatx.itemAt(1, 1).toDouble();
+
+  double sum_x_i_a_4 = 0, sum_x_i_a_2 = 0, sum_y_x_i_a_2 = 0;
+  for (int i = 0; i < n; i++) {
+    sum_x_i_a_4 += 1/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq));
+    sum_x_i_a_2 += 1/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq));
+    sum_y_x_i_a_2 += xyPairArr[i].item2/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq));
+  }
+  Matrix cbmatx = SquareMatrix([[sum_x_i_a_4, -sum_x_i_a_2],
+    [-sum_x_i_a_2, n]]).inverse().matrixProduct(Matrix([[sum_y_x_i_a_2],
+    [-sum_y_i]]));
+
+  cEq = cbmatx.itemAt(1, 1).toDouble();
+  bEq = cbmatx.itemAt(2, 1).toDouble();
+  print(aEq);
+  print(cEq);
+  print(bEq);
 }
+
 
 void main() {
   //hui();
@@ -57,6 +110,7 @@ class SchemePage extends StatefulWidget {
 }
 
 class SchemePageState extends State<SchemePage> {
+  double aEq, bEq, cEq;
   TextEditingController widthController = TextEditingController();
   TextEditingController heightController = TextEditingController();
 
@@ -82,11 +136,17 @@ class SchemePageState extends State<SchemePage> {
               ),
             ),
             FlatButton(
-                child: Text('Set the ratio'),
+                child: Text('Set ratio'),
                 color: Colors.blueAccent,
                 onPressed: () {
                   _ratioBloc.dispatch(Sides(double.parse(widthController.text),
                       double.parse(heightController.text)));
+                }),
+            FlatButton(
+                child: Text('Cal. router'),
+                color: Colors.blueAccent,
+                onPressed: () {
+                  calibrate(_pointsBloc);
                 })
           ]),
           Row(
@@ -100,16 +160,17 @@ class SchemePageState extends State<SchemePage> {
                     }),
                 FlatButton(
                     color: Colors.blueAccent,
-                    child: Text('Measure WiFi level for currently dragged point'),
+                    child: Text('Measure WiFi'),
                     onPressed: () {
                       _pointsBloc
                           .dispatch(PointEvent.measure(_cpBloc.currentState));
                     }),
                 FlatButton(
                     color: Colors.blueAccent,
-                    child: Text('Delete currently dragged point/obstacle'),
+                    child: Text('Del last point'),
                     onPressed: () {
-                      _pointsBloc.dispatch(PointEvent.delete(_cpBloc.currentState));
+                      _pointsBloc
+                          .dispatch(PointEvent.delete(_cpBloc.currentState));
                     })
               ]),
               Column(children: <Widget>[
@@ -123,7 +184,8 @@ class SchemePageState extends State<SchemePage> {
                     color: Colors.blueAccent,
                     child: Text('Delete obstacle'),
                     onPressed: () {
-                      _obstacleBloc.dispatch(ObstacleEvent.delete(_cpBloc.currentState));
+                      _obstacleBloc
+                          .dispatch(ObstacleEvent.delete(_cpBloc.currentState));
                     }),
               ]),
               Expanded(child: WifiDisplayer())
@@ -131,6 +193,83 @@ class SchemePageState extends State<SchemePage> {
           ),
           MyMap()
         ]));
+  }
+
+  void calibrate(PointsBloc pointsBloc) {
+    List<Point> pointList = pointsBloc.currentState;
+    String routerKey = pointsBloc.routerKey;
+    Offset routerOffset = pointList
+        .firstWhere((point) => point.key.toString() == routerKey)
+        .state
+        .position;
+    double routerLvl = pointList
+        .firstWhere((point) => point.key.toString() == routerKey)
+        .wifiLvl
+        .toDouble();
+    int n = pointList.length;
+    List<Tuple2<double, double>> xyPairArr = [];
+    xyPairArr.add(Tuple2<double, double>(0, routerLvl));
+
+    pointList.forEach((point) => {
+          () {
+            if (point.key.toString() != routerKey) {
+              xyPairArr.add(Tuple2<double, double>(
+                  sqrt((point.state.position.dx - routerOffset.dx) *
+                          (point.state.position.dy - routerOffset.dy) +
+                      (point.state.position.dy - routerOffset.dy) *
+                          (point.state.position.dy - routerOffset.dy)),
+                  point.wifiLvl.toDouble()));
+            }
+          }
+        });
+    xyPairArr.sort((a, b) {a.item1.compareTo(b.item1);});
+
+    List<double> S = List(n);
+
+    for (int i = 0; i < n; i++) {
+      if (i == 0) {
+        S[i] = 0;
+        continue;
+      } else {
+        S[i] = S[i-1] + 1/2*
+            (xyPairArr[i].item2+xyPairArr[i-1].item2)*
+            (xyPairArr[i].item1-xyPairArr[i-1].item1);
+      }
+    }
+    double sum_y_i_2 = 0, sum_x_y_i = 0, sum_y_i = 0, sum_x_i_2 = 0, sum_x_i = 0, sum_s_x_y_y = 0, sum_s_x_y_x = 0, sum_x_y = 0;
+    for (int i = 0; i < n; i++) {
+      sum_y_i_2 += xyPairArr[i].item2*xyPairArr[i].item2;
+      sum_x_y_i += xyPairArr[i].item1*xyPairArr[i].item2;
+      sum_y_i += xyPairArr[i].item2;
+      sum_x_i_2 += xyPairArr[i].item1*xyPairArr[i].item1;
+      sum_x_i += xyPairArr[i].item1;
+      sum_s_x_y_y += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2)*xyPairArr[i].item2;
+      sum_s_x_y_x += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2)*xyPairArr[i].item1;
+      sum_x_y += -(S[i] + xyPairArr[i].item1*xyPairArr[i].item2);
+    }
+    Matrix amatx = SquareMatrix([
+      [sum_y_i_2, sum_x_y_i, sum_y_i],
+      [sum_x_y_i, sum_x_i_2, sum_x_i],
+      [sum_y_i, sum_x_i, n]]).inverse().
+      matrixProduct(Matrix([[sum_s_x_y_y], [sum_s_x_y_x], [sum_x_y]]));
+
+    print(amatx.itemAt(1, 1));
+    aEq = amatx.itemAt(1, 1);
+
+    double sum_x_i_a_4 = 0, sum_x_i_a_2 = 0, sum_y_x_i_a_2 = 0;
+    for (int i = 0; i < n; i++) {
+      sum_x_i_a_4 += 1/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1 + aEq));
+      sum_x_i_a_2 += 1/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1));
+      sum_y_x_i_a_2 += xyPairArr[i].item2/((xyPairArr[i].item1 + aEq)*(xyPairArr[i].item1));
+    }
+    Matrix cbmatx = SquareMatrix([[sum_x_i_a_4, -sum_x_i_a_2],
+    [-sum_x_i_a_2, n]]).inverse().matrixProduct(Matrix([[sum_y_x_i_a_2],
+    [-sum_y_i]]));
+
+    cEq = cbmatx.itemAt(1, 1);
+    bEq = cbmatx.itemAt(1, 2);
+    print(cEq);
+    print(bEq);
   }
 }
 
@@ -150,44 +289,42 @@ class MyMapState extends State<MyMap> {
     return BlocBuilder<PointEvent, List<Point>>(
         bloc: _pointsBloc,
         builder: (BuildContext context, pointList) {
-            return BlocBuilder<ObstacleEvent, List<Obstacle>>(
-                bloc: _obstacleBloc,
-                builder: (BuildContext context, obstacleList) {
-                      return BlocBuilder<Sides, double>(
-                          bloc: _ratioBloc,
-                          builder: (BuildContext context, ratio) {
-                            print(pointList);
-                            List<Widget> widgetList = [];
-                            widgetList.add(AspectRatio(
-                                aspectRatio: ratio,
-                                child: Container(
-                                  padding: EdgeInsets.all(5),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.rectangle,
-                                    gradient: LinearGradient(
-                                      // Where the linear gradient begins and ends
-                                      begin: Alignment.topRight,
-                                      end: Alignment.bottomLeft,
-                                      // Add one stop for each color. Stops should increase from 0 to 1
-                                      stops: [0.1, 0.5, 0.7, 0.9],
-                                      colors: [
-                                        Colors.indigo[800],
-                                        Colors.indigo[700],
-                                        Colors.indigo[600],
-                                        Colors.indigo[400],
-                                      ],
-                                    ),
-                                  ),
-                                )));
-                            widgetList.addAll(pointList);
-                            obstacleList.forEach((Obstacle obstacle) {
-                              widgetList.addAll(obstacle.getWidgets());
-                            });
-                            return SingleChildScrollView(
-                              scrollDirection: Axis.vertical,
-                              child: Stack(children: widgetList, key: GlobalKey()),
-                            );
-                          });
+          return BlocBuilder<ObstacleEvent, List<Obstacle>>(
+              bloc: _obstacleBloc,
+              builder: (BuildContext context, obstacleList) {
+                return BlocBuilder<Sides, double>(
+                    bloc: _ratioBloc,
+                    builder: (BuildContext context, ratio) {
+                      print(pointList);
+                      List<Widget> widgetList = [];
+                      widgetList.add(AspectRatio(
+                          aspectRatio: ratio,
+                          child: Container(
+                            padding: EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.rectangle,
+                              gradient: LinearGradient(
+                                // Where the linear gradient begins and ends
+                                begin: Alignment.topRight,
+                                end: Alignment.bottomLeft,
+                                // Add one stop for each color. Stops should increase from 0 to 1
+                                stops: [0.1, 0.5, 0.7, 0.9],
+                                colors: [
+                                  Colors.indigo[800],
+                                  Colors.indigo[700],
+                                  Colors.indigo[600],
+                                  Colors.indigo[400],
+                                ],
+                              ),
+                            ),
+                          )));
+                      widgetList.addAll(pointList);
+                      obstacleList.forEach((Obstacle obstacle) {
+                        widgetList.addAll(obstacle.getWidgets());
+                      });
+                      return Stack(children: widgetList);
                     });
               });
+        });
   }
+}

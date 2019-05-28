@@ -25,8 +25,8 @@ class Obstacle {
   Key key;
   double signalLossCoeff;
   Offset boxSize;
-  List<Offset> verticesCoords;
-  List<ObstacleVertex> vertices;
+  List<Offset> verticesCoords = [];
+  List<ObstacleVertex> vertices = [];
   Offset position;
   ObstacleLinePainter linePainter;
 
@@ -81,10 +81,10 @@ class Obstacle {
 
 class ObstacleVertex extends StatefulWidget {
   int id;
-  Key key;
+  Key myKey;
   Function(Offset, int) callback;
   final Offset initPos;
-  ObstacleVertex(this.id, this.key, this.callback, this.initPos);
+  ObstacleVertex(this.id, this.myKey, this.callback, this.initPos);
 
   @override
   State<StatefulWidget> createState() {
@@ -108,10 +108,10 @@ class ObstacleVertexState extends State<ObstacleVertex> {
       child: GestureDetector(
         child: Icon(
           Icons.add_circle,
-          size: 10,
+          size: 15,
         ),
         onTap: (){
-          BlocProvider.of<CPBloc>(context).dispatch(widget.key);
+          BlocProvider.of<CPBloc>(context).dispatch(widget.myKey);
         },
         onPanUpdate: (details) {
           setState((){
@@ -151,7 +151,9 @@ class ObstacleLinePainterState extends State<ObstacleLinePainter> {
 
   @override
   void initState() {
-    // TODO: implement initState
+    position = Offset(50, 50);
+    size = Offset(10, 10);
+    pointsCoords = [Offset(50, 50), Offset(60, 50), Offset(60, 60), Offset(50, 60)];
     super.initState();
   }
 
@@ -165,22 +167,8 @@ class ObstacleLinePainterState extends State<ObstacleLinePainter> {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    return Positioned(
-      left: position.dx,
-      top: position.dy,
-      child: CustomPaint(
-        child: Opacity(
-          opacity: 1.0,
-          child: Container(
-            width: size.dx,
-            height: size.dy,
-          ),
-        ),
+    return CustomPaint(
         foregroundPainter: MyPainter(pointsCoords),
-      ),
-
-
     );
   }
 }

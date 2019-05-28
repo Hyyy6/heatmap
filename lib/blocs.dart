@@ -7,8 +7,13 @@ import 'package:heat_map_1/points.dart';
 import 'package:heat_map_1/wifiLvlProvider.dart';
 
 class PointsBloc extends Bloc<PointEvent, List<Point>> {
+  String routerKey;
+
   @override
-  List<Point> get initialState => [];
+  List<Point> get initialState {
+    routerKey = UniqueKey().toString();
+    return [Router(key: Key(routerKey))];
+  }
 
   @override
   void onTransition(Transition<PointEvent, List<Point>> transition) {
@@ -29,6 +34,8 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
         break;
       case PointsAction.delete:
         for (Point point in newPointList) {
+          if(point.key.toString() == routerKey)
+            break;
           if (point.key == event.key) {
             newPointList.remove(point);
             break;
@@ -40,6 +47,7 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
         Point tmpPoint = newPointList.firstWhere((point) => point.key == event.key);
         if (tmpPoint != null) {
           tmpPoint.wifiLvl = await WiFiLvlProvider.getWifiLevel();
+          tmpPoint.state.callbackMeasure(tmpPoint.wifiLvl);
         }
         yield newPointList;
         break;
@@ -50,6 +58,11 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
 class ObstacleBloc extends Bloc<ObstacleEvent, List<Obstacle>> {
   @override
   List<Obstacle> get initialState => [];
+
+  void onTransition(Transition<ObstacleEvent, List<Obstacle>> transition) {
+    print(transition);
+    super.onTransition(transition);
+  }
 
   @override
   Stream<List<Obstacle>> mapEventToState(ObstacleEvent event) async* {
@@ -63,7 +76,9 @@ class ObstacleBloc extends Bloc<ObstacleEvent, List<Obstacle>> {
         yield newObstacleList;
         break;
       case ObstacleAction.delete:
+        print(event.key.toString());
         for (Obstacle obstacle in newObstacleList) {
+          print(obstacle.key.toString());
           if (obstacle.key == event.key) {
             newObstacleList.remove(obstacle);
             break;

@@ -33,7 +33,7 @@ class PointEvent {
 
 class Point extends StatefulWidget {
   Point({Key key}) : super(key: key);
-  //Offset position = Offset(50.0, 50.0);
+  final Color color = Colors.amber;
   int wifiLvl = 0;
   PointState state;
 
@@ -59,8 +59,14 @@ class PointState extends State<Point> {
     return Positioned(
         left: position.dx,
         top: position.dy,
-        child: WrappedGestureDetector(widget, size, position, wifiLvl, callbackStart, callbackUpdate, callbackEnd)
+        child: WrappedGestureDetector(widget, size, position, wifiLvl, callbackStart, callbackUpdate, callbackEnd, widget.color)
     );
+  }
+
+  void callbackMeasure(int _wifiLvl) {
+    setState(() {
+      this.wifiLvl = _wifiLvl;
+    });
   }
 
   void callbackStart(){
@@ -94,12 +100,13 @@ class WrappedGestureDetector extends StatefulWidget {
   Offset size;
   Offset position;
   int wifiLvl;
+  Color color;
   Function() callbackStart;
   Function(DragUpdateDetails) callbackUpdate;
   Function() callbackEnd;
 
 
-  WrappedGestureDetector(this.widget, this.size, this.position, this.wifiLvl, this.callbackStart, this.callbackUpdate, this.callbackEnd);
+  WrappedGestureDetector(this.widget, this.size, this.position, this.wifiLvl, this.callbackStart, this.callbackUpdate, this.callbackEnd, this.color);
 
   @override
   _WrappedGestureDetectorState createState() => _WrappedGestureDetectorState();
@@ -114,7 +121,7 @@ class _WrappedGestureDetectorState extends State<WrappedGestureDetector> {
         child: Container(
             width: widget.size.dx,
             height: widget.size.dy,
-            color: Colors.amber,
+            color: widget.color,
             child: Text('${widget.wifiLvl}')),
         onTap: () {
           BlocProvider.of<CPBloc>(context).dispatch(widget.widget.key);
@@ -135,4 +142,9 @@ class _WrappedGestureDetectorState extends State<WrappedGestureDetector> {
         }
     );
   }
+}
+
+class Router extends Point {
+  Router({Key key}) : super(key: key);
+  Color color = Colors.pink;
 }

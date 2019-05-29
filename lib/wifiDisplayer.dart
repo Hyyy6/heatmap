@@ -16,36 +16,25 @@ class WifiDisplayerState extends State<WifiDisplayer> {
   @override
   void initState() {
     super.initState();
-    const oneSec = const Duration(seconds: 1);
-    _fetchWifiData(10);
-    Timer.periodic(oneSec, (Timer t) {
-      _fetchWifiData(10);
-    });
+    _fetchWifiData();
   }
 
   // :TODO fix this shit
-  Future<void> _fetchWifiData(int times) async {
-    const millisec = const Duration(milliseconds: 1);
-
+  void _fetchWifiData() {
     int tmp = 0;
     int count = 0;
 
-    Timer.periodic(millisec * times, (Timer T) async {
-      if (count * times == 900) {
-        if (_wifiLvl != tmp) {
-          tmp = (tmp / count).round();
-          setState(() {
-            _wifiLvl = tmp;
-          });
-        }
-        T.cancel();
-      }
-
+    Timer.periodic(Duration(microseconds: 100), (Timer T) async {
       tmp += await WiFiLvlProvider.getWifiLevel();
-
-      //if(count % 5 == 0) print(tmp/count);
-
       count++;
+
+      if(count == 10) {
+        setState(() {
+          _wifiLvl = (tmp/count).round();
+        });
+        count = 0;
+        tmp = 0;
+      }
     });
   }
 
@@ -53,6 +42,37 @@ class WifiDisplayerState extends State<WifiDisplayer> {
   Widget build(BuildContext context) {
     return Center(
         child: Text('$_wifiLvl',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)));
+  }
+}
+
+class WifiDisplayerInstant extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() => WifiDisplayerInstantState();
+}
+
+class WifiDisplayerInstantState extends State<WifiDisplayerInstant> {
+  int wifiLvl;
+
+  void _fetchWifiData () {
+    Timer.periodic(Duration(seconds: 1), (Timer T) async {
+        var tmp = await WiFiLvlProvider.getWifiLevel();
+        setState(() {
+          wifiLvl = tmp;
+        });
+    });
+  }
+
+  @override
+  void initState() {
+    _fetchWifiData();
+    super.initState();
+  }
+  @override
+  Widget build(BuildContext context) {
+
+    return Center(
+        child: Text('$wifiLvl',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)));
   }
 }

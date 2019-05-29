@@ -11,8 +11,9 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
 
   @override
   List<Point> get initialState {
-    routerKey = UniqueKey().toString();
-    return [Router(key: Key(routerKey))];
+    var key = UniqueKey();
+    routerKey = key.toString();
+    return [Router(key: key)];
   }
 
   @override
@@ -46,7 +47,7 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
       case PointsAction.measure:
         Point tmpPoint = newPointList.firstWhere((point) => point.key == event.key);
         if (tmpPoint != null) {
-          tmpPoint.wifiLvl = await WiFiLvlProvider.getWifiLevel();
+          tmpPoint.wifiLvl = event.wifiLvl;
           tmpPoint.state.callbackMeasure(tmpPoint.wifiLvl);
         }
         yield newPointList;

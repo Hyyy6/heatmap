@@ -17,6 +17,7 @@ enum PointsAction { add, delete, measure, force }
 class PointEvent {
   PointsAction action;
   Key _key;
+  int wifiLvl;
 
   PointEvent.add() {
     action = PointsAction.add;
@@ -26,7 +27,7 @@ class PointEvent {
     action = PointsAction.delete;
   }
 
-  PointEvent.measure(this._key) {
+  PointEvent.measure(this._key, this.wifiLvl) {
     action = PointsAction.measure;
   }
 

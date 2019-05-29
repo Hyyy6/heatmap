@@ -92,8 +92,7 @@ void hui() {
   print(bEq);
 }
 
-
-double aEq, bEq, cEq;
+double aEq = double.nan, bEq = double.nan, cEq = double.nan;
 
 void main() {
   //hui();
@@ -149,13 +148,55 @@ class SchemePageState extends State<SchemePage> {
     super.initState();
   }
 
+  Future<int> _asyncInputWifiLvlDialog(BuildContext context) async {
+    int wifiLvl = await WiFiLvlProvider.getWifiLevel();
+    return showDialog<int>(
+      context: context,
+      barrierDismissible: false, // dialog is dismissible with a tap on the barrier
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Enter wifi level'),
+          content: new Row(
+            children: <Widget>[
+              new Expanded(
+              child: FlatButton(
+                  color: Colors.blueAccent,
+                  child: Text('$wifiLvl'),
+                  onPressed: () {
+                  }),
+          ),
+              new Expanded(
+                  child: new TextField(
+                    autofocus: true,
+                    decoration: new InputDecoration(
+                        labelText: 'WiFi Level'),
+                    onChanged: (value) {
+                      wifiLvl = int.parse(value);
+                    },
+                  ))
+            ],
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('Ok'),
+              onPressed: () {
+                Navigator.of(context).pop(wifiLvl);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final RatioBloc _ratioBloc = BlocProvider.of<RatioBloc>(context);
     final PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
     final CPBloc _cpBloc = BlocProvider.of<CPBloc>(context);
     final ObstacleBloc _obstacleBloc = BlocProvider.of<ObstacleBloc>(context);
-    final ModelEngagedBloc _modelEngagedBloc = BlocProvider.of<ModelEngagedBloc>(context);
+    final ModelEngagedBloc _modelEngagedBloc =
+        BlocProvider.of<ModelEngagedBloc>(context);
 
     return Scaffold(
         appBar: AppBar(title: Text('WiFi Heatmap')),
@@ -215,9 +256,10 @@ class SchemePageState extends State<SchemePage> {
                 FlatButton(
                     color: Colors.blueAccent,
                     child: Text('Measure WiFi'),
-                    onPressed: () {
+                    onPressed: () async {
+                      var wifiLvl = await _asyncInputWifiLvlDialog(context);
                       _pointsBloc
-                          .dispatch(PointEvent.measure(_cpBloc.currentState));
+                          .dispatch(PointEvent.measure(_cpBloc.currentState, wifiLvl));
                     }),
                 FlatButton(
                     color: Colors.blueAccent,
@@ -242,7 +284,8 @@ class SchemePageState extends State<SchemePage> {
                           .dispatch(ObstacleEvent.delete(_cpBloc.currentState));
                     }),
               ]),
-              Expanded(child: WifiDisplayer())
+              Expanded(child: WifiDisplayer()),
+              Expanded(child: WifiDisplayerInstant())
             ],
           ),
           MyMap()
@@ -264,21 +307,14 @@ class SchemePageState extends State<SchemePage> {
     List<Tuple2<double, double>> xyPairArr = [];
     xyPairArr.add(Tuple2<double, double>(0, routerLvl));
 
-    pointList.forEach((point) => {
-          () {
-            if (point.key.toString() != routerKey) {
-              xyPairArr.add(Tuple2<double, double>(
-                  sqrt((point.state.position.dx - routerOffset.dx) *
-                          (point.state.position.dy - routerOffset.dy) +
-                      (point.state.position.dy - routerOffset.dy) *
-                          (point.state.position.dy - routerOffset.dy)),
-                  point.wifiLvl.toDouble()));
-            }
-          }
-        });
-    xyPairArr.sort((a, b) {
-      a.item1.compareTo(b.item1);
+    pointList.forEach((point) {
+      if (point.key.toString() != routerKey) {
+        xyPairArr.add(Tuple2<double, double>(
+            LogicHelper.calcDistance(point.state.position, routerOffset),
+            point.wifiLvl.toDouble()));
+      }
     });
+    xyPairArr.sort((a, b) => a.item1.compareTo(b.item1));
 
     List<double> S = List(n);
 
@@ -318,11 +354,15 @@ class SchemePageState extends State<SchemePage> {
       [sum_y_i_2, sum_x_y_i, sum_y_i],
       [sum_x_y_i, sum_x_i_2, sum_x_i],
       [sum_y_i, sum_x_i, n]
-    ]).inverse().matrixProduct(Matrix([
-          [sum_s_x_y_y],
-          [sum_s_x_y_x],
-          [sum_x_y]
-        ]));
+    ]);
+    try {
+      (amatx as SquareMatrix).inverse();
+    } catch (e) {}
+    amatx = amatx.matrixProduct(Matrix([
+      [sum_s_x_y_y],
+      [sum_s_x_y_x],
+      [sum_x_y]
+    ]));
 
     print(amatx.itemAt(1, 1));
     aEq = amatx.itemAt(1, 1);
@@ -334,9 +374,10 @@ class SchemePageState extends State<SchemePage> {
               (xyPairArr[i].item1 + aEq) *
               (xyPairArr[i].item1 + aEq) *
               (xyPairArr[i].item1 + aEq));
-      sum_x_i_a_2 += 1 / ((xyPairArr[i].item1 + aEq) * (xyPairArr[i].item1));
+      sum_x_i_a_2 +=
+          1 / ((xyPairArr[i].item1 + aEq) * (xyPairArr[i].item1 + aEq));
       sum_y_x_i_a_2 += xyPairArr[i].item2 /
-          ((xyPairArr[i].item1 + aEq) * (xyPairArr[i].item1));
+          ((xyPairArr[i].item1 + aEq) * (xyPairArr[i].item1 + aEq));
     }
     Matrix cbmatx = SquareMatrix([
       [sum_x_i_a_4, -sum_x_i_a_2],
@@ -347,47 +388,46 @@ class SchemePageState extends State<SchemePage> {
         ]));
 
     cEq = cbmatx.itemAt(1, 1);
-    bEq = cbmatx.itemAt(1, 2);
+    bEq = cbmatx.itemAt(2, 1);
     print(cEq);
     print(bEq);
   }
+}
 
-  void calibrateObstacles(PointsBloc pointsBloc, ObstacleBloc obstacleBloc) {
-    List<Point> pointList = pointsBloc.currentState;
-    List<Obstacle> obstList = obstacleBloc.currentState;
-    String routerKey = pointsBloc.routerKey;
-    Offset routerOffset = pointList
-        .firstWhere((point) => point.key.toString() == routerKey)
-        .state
-        .position;
-    double routerLvl = pointList
-        .firstWhere((point) => point.key.toString() == routerKey)
-        .wifiLvl
-        .toDouble();
-    pointList.removeWhere(
-        (point) => point.key.toString() == routerKey); //list w\o router
-    pointList.sort((Point a, Point b) {
-      LogicHelper.calcDistance(a.state.position, routerOffset)
-          .compareTo(LogicHelper.calcDistance(b.state.position, routerOffset));
-    }); //sorted with respect to the distance to the router
-    pointList.forEach((point) {
-      var lvl = LogicHelper.calcLvl(aEq, bEq, cEq, routerOffset, point.state.position);
-      var tempObsts =
-      LogicHelper.getIntercectedObsts(obstList, point.state.position, routerOffset);
-      tempObsts.forEach((obstacle) {
-        if (obstacle.signalLossCoeff != 0) {
-          lvl -= obstacle.signalLossCoeff;
-        }
-      });
-      tempObsts.removeWhere((obstacle) => obstacle.signalLossCoeff == 0);
-      var sharedCoef =
-          (lvl - point.wifiLvl)/tempObsts.length;
-      tempObsts.forEach((obstacle) {
-        obstacleBloc.dispatch(ObstacleEvent.calibrate(obstacle.key, sharedCoef));
-      });
+void calibrateObstacles(PointsBloc pointsBloc, ObstacleBloc obstacleBloc) {
+  List<Point> pointList = []..addAll(pointsBloc.currentState);
+  List<Obstacle> obstList = []..addAll(obstacleBloc.currentState);
+  String routerKey = pointsBloc.routerKey;
+  Offset routerOffset = pointList
+      .firstWhere((point) => point.key.toString() == routerKey)
+      .state
+      .position;
+  double routerLvl = pointList
+      .firstWhere((point) => point.key.toString() == routerKey)
+      .wifiLvl
+      .toDouble();
+  pointList.removeWhere(
+      (point) => point.key.toString() == routerKey); //list w\o router
+  pointList.sort((Point a, Point b) => LogicHelper.calcDistance(
+          a.state.position, routerOffset)
+      .compareTo(LogicHelper.calcDistance(b.state.position,
+          routerOffset))); //sorted with respect to the distance to the router
+  pointList.forEach((point) {
+    var lvl =
+        LogicHelper.calcLvl(aEq, bEq, cEq, routerOffset, point.state.position);
+    var tempObsts = LogicHelper.getIntercectedObsts(
+        obstList, point.state.position, routerOffset);
+    tempObsts.forEach((obstacle) {
+      if (obstacle.signalLossCoeff != 0) {
+        lvl -= obstacle.signalLossCoeff;
+      }
     });
-
-  }
+    tempObsts.removeWhere((obstacle) => obstacle.signalLossCoeff == 0);
+    var sharedCoef = (lvl - point.wifiLvl) / tempObsts.length;
+    tempObsts.forEach((obstacle) {
+      obstacleBloc.dispatch(ObstacleEvent.calibrate(obstacle.key, sharedCoef));
+    });
+  });
 }
 
 class MyMap extends StatefulWidget {
@@ -495,11 +535,13 @@ class LogicHelper {
     return sqrt(pow((p1.dx - p2.dx), 2) + pow((p1.dy - p2.dy), 2));
   }
 
-  static double calcLvl(double a, double b, double k, Offset router, Offset point) {
+  static double calcLvl(
+      double a, double b, double k, Offset router, Offset point) {
     return k / (pow((calcDistance(router, point) + a), 2)) - b;
   }
 
-  static List<Obstacle> getIntercectedObsts(List<Obstacle> obstList, Offset point, Offset router) {
+  static List<Obstacle> getIntercectedObsts(
+      List<Obstacle> obstList, Offset point, Offset router) {
     List<Obstacle> result = [];
 
     obstList.forEach((obstacle) {

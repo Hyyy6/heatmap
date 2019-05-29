@@ -222,7 +222,7 @@ class SchemePageState extends State<SchemePage> {
                 child: Text('Engage model'),
                 color: Colors.blueAccent,
                 onPressed: () {
-                  calibrateRouter(_pointsBloc);
+                  _modelEngagedBloc.dispatch(true);
                 })
           ]),
           Row(children: <Widget>[
@@ -284,7 +284,8 @@ class SchemePageState extends State<SchemePage> {
                           .dispatch(ObstacleEvent.delete(_cpBloc.currentState));
                     }),
               ]),
-              Expanded(child: WifiDisplayer()),
+              // :TODO fix this shit
+              //Expanded(child: WifiDisplayer()),
               Expanded(child: WifiDisplayerInstant())
             ],
           ),
@@ -315,7 +316,8 @@ class SchemePageState extends State<SchemePage> {
       }
     });
     xyPairArr.sort((a, b) => a.item1.compareTo(b.item1));
-
+    print(xyPairArr);
+    var norm = xyPairArr[1].item1;
     List<double> S = List(n);
 
     for (int i = 0; i < n; i++) {
@@ -356,7 +358,7 @@ class SchemePageState extends State<SchemePage> {
       [sum_y_i, sum_x_i, n]
     ]);
     try {
-      (amatx as SquareMatrix).inverse();
+      amatx = (amatx as SquareMatrix).inverse();
     } catch (e) {}
     amatx = amatx.matrixProduct(Matrix([
       [sum_s_x_y_y],
@@ -412,22 +414,29 @@ void calibrateObstacles(PointsBloc pointsBloc, ObstacleBloc obstacleBloc) {
           a.state.position, routerOffset)
       .compareTo(LogicHelper.calcDistance(b.state.position,
           routerOffset))); //sorted with respect to the distance to the router
-  pointList.forEach((point) {
-    var lvl =
-        LogicHelper.calcLvl(aEq, bEq, cEq, routerOffset, point.state.position);
+  for (Point point in pointList) {
+    var lvl = LogicHelper.calcLvl(aEq, bEq, cEq, routerOffset, point.state.position);
     var tempObsts = LogicHelper.getIntercectedObsts(
         obstList, point.state.position, routerOffset);
+
+    if(tempObsts.isEmpty)
+      continue;
+
     tempObsts.forEach((obstacle) {
       if (obstacle.signalLossCoeff != 0) {
         lvl -= obstacle.signalLossCoeff;
       }
     });
-    tempObsts.removeWhere((obstacle) => obstacle.signalLossCoeff == 0);
+    tempObsts.removeWhere((obstacle) => obstacle.signalLossCoeff != 0);
+
+    if(tempObsts.isEmpty)
+      continue;
+
     var sharedCoef = (lvl - point.wifiLvl) / tempObsts.length;
     tempObsts.forEach((obstacle) {
       obstacleBloc.dispatch(ObstacleEvent.calibrate(obstacle.key, sharedCoef));
     });
-  });
+  }
 }
 
 class MyMap extends StatefulWidget {
@@ -544,12 +553,15 @@ class LogicHelper {
       List<Obstacle> obstList, Offset point, Offset router) {
     List<Obstacle> result = [];
 
-    obstList.forEach((obstacle) {
+    for (Obstacle obstacle in obstList) {
       for (int i = 0; i < 4; i++) {
         if (LogicHelper.doIntersect(point, router, obstacle.verticesCoords[i],
-            obstacle.verticesCoords[(i + 1) % 4])) result.add(obstacle);
+            obstacle.verticesCoords[(i + 1) % 4])) {
+          result.add(obstacle);
+          continue;
+        }
       }
-    });
+    }
     return result;
   }
 }

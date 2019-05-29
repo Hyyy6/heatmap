@@ -36,7 +36,7 @@ class PointsBloc extends Bloc<PointEvent, List<Point>> {
       case PointsAction.delete:
         for (Point point in newPointList) {
           if(point.key.toString() == routerKey)
-            break;
+            continue;
           if (point.key == event.key) {
             newPointList.remove(point);
             break;
@@ -95,6 +95,7 @@ class ObstacleBloc extends Bloc<ObstacleEvent, List<Obstacle>> {
           print(obstacle.key.toString());
           if (obstacle.key == event.key) {
             obstacle.signalLossCoeff = event.lossCoef;
+            yield newObstacleList;
             break;
           }
         }

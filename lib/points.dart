@@ -66,7 +66,7 @@ class PointState extends State<Point> {
     return Positioned(
         left: position.dx,
         top: position.dy,
-        child: WrappedGestureDetector(widget, size, position, wifiLvl, callbackStart, callbackUpdate, callbackEnd, widget.color)
+        child: WrappedGestureDetector(widget, size, position, wifiLvl, callbackStart, callbackUpdate, callbackEnd, widget.color, widget.key.toString())
     );
   }
 
@@ -107,14 +107,14 @@ class WrappedGestureDetector extends StatefulWidget {
   Offset size;
   Offset position;
   int wifiLvl;
-  //int modelWifiLvl;
+  String myKey;
   Color color;
   Function() callbackStart;
   Function(DragUpdateDetails) callbackUpdate;
   Function() callbackEnd;
 
 
-  WrappedGestureDetector(this.widget, this.size, this.position, this.wifiLvl, this.callbackStart, this.callbackUpdate, this.callbackEnd, this.color);
+  WrappedGestureDetector(this.widget, this.size, this.position, this.wifiLvl, this.callbackStart, this.callbackUpdate, this.callbackEnd, this.color, this.myKey);
 
   @override
   _WrappedGestureDetectorState createState() => _WrappedGestureDetectorState();
@@ -140,7 +140,7 @@ class _WrappedGestureDetectorState extends State<WrappedGestureDetector> {
               return BlocBuilder<bool, bool> (
                 bloc: modelBloc,
                 builder: (BuildContext context, modelEngaged) {
-                  if(modelEngaged == false || widget.key.toString() == pointsBloc.routerKey)
+                  if(modelEngaged == false || widget.myKey == pointsBloc.routerKey)
                     return GestureDetector(
                         child: Container(
                             width: widget.size.dx,
@@ -162,7 +162,7 @@ class _WrappedGestureDetectorState extends State<WrappedGestureDetector> {
                         },
                         onPanEnd: (details) {
                           widget.callbackEnd();
-                          if(widget.key.toString() == pointsBloc.routerKey)
+                          if(widget.myKey == pointsBloc.routerKey)
                             pointsBloc.dispatch(PointEvent.force());
                         }
                     );
@@ -174,14 +174,14 @@ class _WrappedGestureDetectorState extends State<WrappedGestureDetector> {
                     LogicHelper.getIntercectedObsts(obstList, widget.position, routerPos).forEach((obst) {
                       lvl -= obst.signalLossCoeff;
                     });
-                    setState((){
-                      modelWifiLvl = lvl.toInt();
-                    });
+//                    setState((){
+//                      modelWifiLvl = lvl.toInt();
+//                    });
                     return Container(
                         width: widget.size.dx,
                         height: widget.size.dy,
                         color: widget.color,
-                        child: Text('$modelWifiLvl'));
+                        child: Text('$lvl'));
                   }
                 }
               );

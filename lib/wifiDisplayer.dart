@@ -27,7 +27,6 @@ class WifiDisplayerState extends State<WifiDisplayer> {
     Timer.periodic(Duration(microseconds: 100), (Timer T) async {
       tmp += await WiFiLvlProvider.getWifiLevel();
       count++;
-
       if(count == 10) {
         setState(() {
           _wifiLvl = (tmp/count).round();

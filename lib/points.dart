@@ -49,9 +49,9 @@ class Point extends StatefulWidget {
 }
 
 class PointState extends State<Point> {
-  var position;
+  Offset position;
   var wifiLvl;
-  var size;
+  Offset size;
 
   @override
   void initState() {
@@ -64,8 +64,8 @@ class PointState extends State<Point> {
   Widget build(BuildContext context) {
     wifiLvl = widget.wifiLvl;
     return Positioned(
-        left: position.dx,
-        top: position.dy,
+        left: position.dx - size.dx/2,
+        top: position.dy - size.dy/2,
         child: WrappedGestureDetector(widget, size, position, wifiLvl, callbackStart, callbackUpdate, callbackEnd, widget.color, widget.key.toString())
     );
   }
@@ -129,7 +129,7 @@ class _WrappedGestureDetectorState extends State<WrappedGestureDetector> {
   Widget build(BuildContext context) {
     var pointsBloc = BlocProvider.of<PointsBloc>(context);
     var obstBloc = BlocProvider.of<ObstacleBloc>(context);
-    var modelBloc = BlocProvider.of<ModelEngagedBloc>(context);
+    var modelBloc = BlocProvider.of<ModelBloc>(context);
 
     return BlocBuilder<PointEvent, List<Point>>(
         bloc: pointsBloc,
@@ -137,10 +137,10 @@ class _WrappedGestureDetectorState extends State<WrappedGestureDetector> {
           return BlocBuilder<ObstacleEvent, List<Obstacle>>(
             bloc: obstBloc,
             builder: (BuildContext context, obstList) {
-              return BlocBuilder<bool, bool> (
+              return BlocBuilder<ModelAction, ModelState> (
                 bloc: modelBloc,
-                builder: (BuildContext context, modelEngaged) {
-                  if(modelEngaged == false || widget.myKey == pointsBloc.routerKey)
+                builder: (BuildContext context, modelState) {
+                  if(modelState.engageModel == false || widget.myKey == pointsBloc.routerKey)
                     return GestureDetector(
                         child: Container(
                             width: widget.size.dx,

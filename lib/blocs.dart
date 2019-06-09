@@ -125,13 +125,30 @@ class RatioBloc extends Bloc<Sides, double> {
   }
 }
 
-class ModelEngagedBloc extends Bloc<bool, bool> {
+enum ModelAction {engageModel, engageHeatmap}
+
+class ModelState {
+  bool engageModel;
+  bool engageHeatmap;
+
+  ModelState(this.engageModel, this.engageHeatmap);
+}
+
+class ModelBloc extends Bloc<ModelAction, ModelState> {
   @override
-  bool get initialState => false;
+  ModelState get initialState => ModelState(false, false);
 
   @override
-  Stream<bool> mapEventToState(bool event) async* {
-    yield !currentState;
+  Stream<ModelState> mapEventToState(ModelAction event) async* {
+    var temp = this.currentState;
+    switch (event) {
+      case ModelAction.engageModel:
+        yield ModelState(!temp.engageModel, temp.engageHeatmap);
+        break;
+      case ModelAction.engageHeatmap:
+        yield ModelState(temp.engageModel, !temp.engageHeatmap);
+        break;
+    }
   }
 }
 

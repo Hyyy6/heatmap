@@ -99,21 +99,23 @@ class ObstacleVertex extends StatefulWidget {
 
 class ObstacleVertexState extends State<ObstacleVertex> {
   Offset position;
+  double size;
 
   @override
   void initState() {
     position = widget.initPos;
+    size = 16;
     super.initState();
   }
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: position.dx,
-      top: position.dy,
+      left: position.dx - size/2,
+      top: position.dy - size/2,
       child: GestureDetector(
         child: Icon(
           Icons.add_circle,
-          size: 15,
+          size: size,
         ),
         onTap: (){
           BlocProvider.of<CPBloc>(context).dispatch(widget.myKey);

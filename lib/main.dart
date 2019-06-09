@@ -9,6 +9,8 @@ import 'package:heat_map_1/wifiLvlProvider.dart';
 import 'package:extended_math/extended_math.dart';
 import 'package:tuple/tuple.dart';
 
+import 'heatMap.dart';
+
 void hui() {
   double aEq, bEq, cEq;
   int n = 4;
@@ -110,7 +112,7 @@ class _AppState extends State<App> {
   final PointsBloc _pointsBloc = PointsBloc();
   final CPBloc _cpBloc = CPBloc();
   final ObstacleBloc _obstacleBloc = ObstacleBloc();
-  final ModelEngagedBloc _modelEngagedBloc = ModelEngagedBloc();
+  final ModelBloc _modelEngagedBloc = ModelBloc();
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +121,7 @@ class _AppState extends State<App> {
       BlocProvider<CPBloc>(bloc: _cpBloc),
       BlocProvider<RatioBloc>(bloc: _ratioBloc),
       BlocProvider<ObstacleBloc>(bloc: _obstacleBloc),
-      BlocProvider<ModelEngagedBloc>(bloc: _modelEngagedBloc)
+      BlocProvider<ModelBloc>(bloc: _modelEngagedBloc)
     ], child: MaterialApp(title: 'WiFi Heatmap', home: SchemePage()));
   }
 
@@ -152,28 +154,27 @@ class SchemePageState extends State<SchemePage> {
     int wifiLvl = await WiFiLvlProvider.getWifiLevel();
     return showDialog<int>(
       context: context,
-      barrierDismissible: false, // dialog is dismissible with a tap on the barrier
+      barrierDismissible: false,
+      // dialog is dismissible with a tap on the barrier
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Enter wifi level'),
           content: new Row(
             children: <Widget>[
               new Expanded(
-              child: FlatButton(
-                  color: Colors.blueAccent,
-                  child: Text('$wifiLvl'),
-                  onPressed: () {
-                  }),
-          ),
+                child: FlatButton(
+                    color: Colors.blueAccent,
+                    child: Text('$wifiLvl'),
+                    onPressed: () {}),
+              ),
               new Expanded(
                   child: new TextField(
-                    autofocus: true,
-                    decoration: new InputDecoration(
-                        labelText: 'WiFi Level'),
-                    onChanged: (value) {
-                      wifiLvl = int.parse(value);
-                    },
-                  ))
+                autofocus: true,
+                decoration: new InputDecoration(labelText: 'WiFi Level'),
+                onChanged: (value) {
+                  wifiLvl = int.parse(value);
+                },
+              ))
             ],
           ),
           actions: <Widget>[
@@ -195,8 +196,7 @@ class SchemePageState extends State<SchemePage> {
     final PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
     final CPBloc _cpBloc = BlocProvider.of<CPBloc>(context);
     final ObstacleBloc _obstacleBloc = BlocProvider.of<ObstacleBloc>(context);
-    final ModelEngagedBloc _modelEngagedBloc =
-        BlocProvider.of<ModelEngagedBloc>(context);
+    final ModelBloc _modelEngagedBloc = BlocProvider.of<ModelBloc>(context);
 
     return Scaffold(
         appBar: AppBar(title: Text('WiFi Heatmap')),
@@ -222,8 +222,19 @@ class SchemePageState extends State<SchemePage> {
                 child: Text('Engage model'),
                 color: Colors.blueAccent,
                 onPressed: () {
-                  _modelEngagedBloc.dispatch(true);
-                })
+                  _modelEngagedBloc.dispatch(ModelAction.engageModel);
+                }),
+            Container(
+              width: 64,
+              height: 36,
+              child: FlatButton(
+                  child: Text('Heatmap'),
+                  color: Colors.blueAccent,
+                  padding: EdgeInsets.all(2),
+                  onPressed: () {
+                    _modelEngagedBloc.dispatch(ModelAction.engageHeatmap);
+                  }),
+            )
           ]),
           Row(children: <Widget>[
             Flexible(
@@ -258,8 +269,8 @@ class SchemePageState extends State<SchemePage> {
                     child: Text('Measure WiFi'),
                     onPressed: () async {
                       var wifiLvl = await _asyncInputWifiLvlDialog(context);
-                      _pointsBloc
-                          .dispatch(PointEvent.measure(_cpBloc.currentState, wifiLvl));
+                      _pointsBloc.dispatch(
+                          PointEvent.measure(_cpBloc.currentState, wifiLvl));
                     }),
                 FlatButton(
                     color: Colors.blueAccent,
@@ -415,12 +426,12 @@ void calibrateObstacles(PointsBloc pointsBloc, ObstacleBloc obstacleBloc) {
       .compareTo(LogicHelper.calcDistance(b.state.position,
           routerOffset))); //sorted with respect to the distance to the router
   for (Point point in pointList) {
-    var lvl = LogicHelper.calcLvl(aEq, bEq, cEq, routerOffset, point.state.position);
+    var lvl =
+        LogicHelper.calcLvl(aEq, bEq, cEq, routerOffset, point.state.position);
     var tempObsts = LogicHelper.getIntercectedObsts(
         obstList, point.state.position, routerOffset);
 
-    if(tempObsts.isEmpty)
-      continue;
+    if (tempObsts.isEmpty) continue;
 
     tempObsts.forEach((obstacle) {
       if (obstacle.signalLossCoeff != 0) {
@@ -429,8 +440,7 @@ void calibrateObstacles(PointsBloc pointsBloc, ObstacleBloc obstacleBloc) {
     });
     tempObsts.removeWhere((obstacle) => obstacle.signalLossCoeff != 0);
 
-    if(tempObsts.isEmpty)
-      continue;
+    if (tempObsts.isEmpty) continue;
 
     var sharedCoef = (lvl - point.wifiLvl) / tempObsts.length;
     tempObsts.forEach((obstacle) {
@@ -452,43 +462,102 @@ class MyMapState extends State<MyMap> {
     final PointsBloc _pointsBloc = BlocProvider.of<PointsBloc>(context);
     final RatioBloc _ratioBloc = BlocProvider.of<RatioBloc>(context);
     final ObstacleBloc _obstacleBloc = BlocProvider.of<ObstacleBloc>(context);
+    final ModelBloc _modelBloc = BlocProvider.of<ModelBloc>(context);
     return BlocBuilder<PointEvent, List<Point>>(
         bloc: _pointsBloc,
         builder: (BuildContext context, pointList) {
           return BlocBuilder<ObstacleEvent, List<Obstacle>>(
               bloc: _obstacleBloc,
               builder: (BuildContext context, obstacleList) {
-                return BlocBuilder<Sides, double>(
-                    bloc: _ratioBloc,
-                    builder: (BuildContext context, ratio) {
-                      print(pointList);
-                      List<Widget> widgetList = [];
-                      widgetList.add(AspectRatio(
-                          aspectRatio: ratio,
-                          child: Container(
-                            padding: EdgeInsets.all(5),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.rectangle,
-                              gradient: LinearGradient(
-                                // Where the linear gradient begins and ends
-                                begin: Alignment.topRight,
-                                end: Alignment.bottomLeft,
-                                // Add one stop for each color. Stops should increase from 0 to 1
-                                stops: [0.1, 0.5, 0.7, 0.9],
-                                colors: [
-                                  Colors.indigo[800],
-                                  Colors.indigo[700],
-                                  Colors.indigo[600],
-                                  Colors.indigo[400],
+                return BlocBuilder<ModelAction, ModelState>(
+                    bloc: _modelBloc,
+                    builder: (BuildContext context, modelState) {
+                      return BlocBuilder<Sides, double>(
+                          bloc: _ratioBloc,
+                          builder: (BuildContext context, ratio) {
+                            print(pointList);
+                            int routerLvl = pointList.firstWhere((point) => point.key.toString() == _pointsBloc.routerKey).wifiLvl;
+                            List<Widget> widgetList = [];
+                            if (modelState.engageHeatmap == false) {
+                              widgetList.add(AspectRatio(
+                                  aspectRatio: ratio,
+                                  child: Container(
+                                    padding: EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.rectangle,
+                                      gradient: LinearGradient(
+                                        // Where the linear gradient begins and ends
+                                        begin: Alignment.topRight,
+                                        end: Alignment.bottomLeft,
+                                        // Add one stop for each color. Stops should increase from 0 to 1
+                                        stops: [0.1, 0.5, 0.7, 0.9],
+                                        colors: [
+                                          Colors.indigo[800],
+                                          Colors.indigo[700],
+                                          Colors.indigo[600],
+                                          Colors.indigo[400],
+                                        ],
+                                      ),
+                                    ),
+                                  )));
+                              widgetList.addAll(pointList);
+                              obstacleList.forEach((Obstacle obstacle) {
+                                widgetList.addAll(obstacle.getWidgets());
+                              });
+                              return Stack(children: widgetList);
+                            }
+                            else {
+                              widgetList.add(CustomPaint(
+                                painter: HeatMap(pointList, obstacleList, _pointsBloc.routerKey),
+                                child: AspectRatio(
+                                    aspectRatio: ratio,
+                                    child: Container(
+                                      padding: EdgeInsets.all(5),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.rectangle,
+                                      ),
+                                    )),
+                              ));
+                              widgetList.addAll(pointList);
+                              obstacleList.forEach((Obstacle obstacle) {
+                                widgetList.addAll(obstacle.getWidgets());
+                              });
+                              return Column(
+                                children: <Widget>[
+                                  Stack(children: widgetList),
+                                  Container(height: 20,),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: <Widget>[
+                                      Text('$routerLvl'),
+                                      Text('${(routerLvl - 127)/2}'),
+                                      Text('-127')
+                                    ]
+                                  ),
+                                  Container(
+                                    height: 30,
+                                    margin: EdgeInsets.symmetric(horizontal: 5),
+                                    padding: EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.rectangle,
+                                      gradient: LinearGradient(
+                                        // Where the linear gradient begins and ends
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                        // Add one stop for each color. Stops should increase from 0 to 1
+                                        stops: [0, 0.5, 1],
+                                        colors: [
+                                          Colors.red,
+                                          Colors.green,
+                                          Colors.blue
+                                        ],
+                                      ),
+                                    ),
+                                  )
                                 ],
-                              ),
-                            ),
-                          )));
-                      widgetList.addAll(pointList);
-                      obstacleList.forEach((Obstacle obstacle) {
-                        widgetList.addAll(obstacle.getWidgets());
-                      });
-                      return Stack(children: widgetList);
+                              );
+                            }
+                          });
                     });
               });
         });

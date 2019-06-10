@@ -476,8 +476,10 @@ class MyMapState extends State<MyMap> {
                           bloc: _ratioBloc,
                           builder: (BuildContext context, ratio) {
                             print(pointList);
-                            int routerLvl = pointList.firstWhere((point) => point.key.toString() == _pointsBloc.routerKey).wifiLvl;
+                            Point router = pointList.firstWhere((point) => point.key.toString() == _pointsBloc.routerKey);
+                            int routerLvl = router.wifiLvl;
                             List<Widget> widgetList = [];
+                            //widgetList.a
                             if (modelState.engageHeatmap == false) {
                               widgetList.add(AspectRatio(
                                   aspectRatio: ratio,
@@ -504,9 +506,14 @@ class MyMapState extends State<MyMap> {
                               obstacleList.forEach((Obstacle obstacle) {
                                 widgetList.addAll(obstacle.getWidgets());
                               });
-                              return Stack(children: widgetList);
+                              return Column(
+                                children: <Widget>[
+                                  Stack(children: widgetList),
+                                ],
+                              );
                             }
                             else {
+                              print(router.state.position);
                               widgetList.add(CustomPaint(
                                 painter: HeatMap(pointList, obstacleList, _pointsBloc.routerKey),
                                 child: AspectRatio(
@@ -547,9 +554,9 @@ class MyMapState extends State<MyMap> {
                                         // Add one stop for each color. Stops should increase from 0 to 1
                                         stops: [0, 0.5, 1],
                                         colors: [
-                                          Colors.red,
-                                          Colors.green,
-                                          Colors.blue
+                                          Color.fromRGBO(255, 0, 0, 1),
+                                          Color.fromRGBO(0, 255, 0, 1),
+                                          Color.fromRGBO(0, 0, 255, 1)
                                         ],
                                       ),
                                     ),

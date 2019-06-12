@@ -35,12 +35,15 @@ class HeatMap extends CustomPainter {
   }
 
   Color getColor(Offset pos, Point router, List<Obstacle> obstList) {
-    var lvl = LogicHelper.calcLvl(aEq, bEq, cEq, router.state.position, pos);
+    double lvl = LogicHelper.calcLvl(aEq, bEq, cEq, router.state.position, pos);
     LogicHelper.getIntercectedObsts(obstList, pos, router.state.position).forEach((obst) {
       lvl -= obst.signalLossCoeff;
     });
-    int maxLvl = router.wifiLvl;
-    int minLvl = -127;
+    double maxLvl = router.wifiLvl.toDouble();
+    double minLvl = -127;
+
+    if (lvl < minLvl) lvl = minLvl;
+
     double ratio = 2 * (lvl - minLvl).toDouble() / (maxLvl - minLvl).toDouble();
     print(ratio.toInt());
     int b = max(0, (255*(1 - ratio)).toInt());

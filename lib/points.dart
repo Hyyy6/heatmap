@@ -17,7 +17,7 @@ enum PointsAction { add, delete, measure, force }
 class PointEvent {
   PointsAction action;
   Key _key;
-  int wifiLvl;
+  double wifiLvl;
 
   PointEvent.add() {
     action = PointsAction.add;
@@ -40,7 +40,7 @@ class PointEvent {
 class Point extends StatefulWidget {
   Point({Key key}) : super(key: key);
   final Color color = Colors.amber;
-  int wifiLvl = 0;
+  double wifiLvl = 0.1;
   int modelWifiLvl = 0;
   PointState state;
 
@@ -50,7 +50,7 @@ class Point extends StatefulWidget {
 
 class PointState extends State<Point> {
   Offset position;
-  var wifiLvl;
+  double wifiLvl;
   Offset size;
 
   @override
@@ -70,7 +70,7 @@ class PointState extends State<Point> {
     );
   }
 
-  void callbackMeasure(int _wifiLvl) {
+  void callbackMeasure(double _wifiLvl) {
     setState(() {
       this.wifiLvl = _wifiLvl;
     });
@@ -106,7 +106,7 @@ class WrappedGestureDetector extends StatefulWidget {
   Widget widget;
   Offset size;
   Offset position;
-  int wifiLvl;
+  double wifiLvl;
   String myKey;
   Color color;
   Function() callbackStart;
@@ -146,7 +146,7 @@ class _WrappedGestureDetectorState extends State<WrappedGestureDetector> {
                             width: widget.size.dx,
                             height: widget.size.dy,
                             color: widget.color,
-                            child: Text('${widget.wifiLvl}')),
+                            child: Text('${LogicHelper.toDbm(widget.wifiLvl)}')),
                         onTap: () {
                           BlocProvider.of<CPBloc>(context).dispatch(widget.widget.key);
                           print(widget.position);
@@ -181,7 +181,7 @@ class _WrappedGestureDetectorState extends State<WrappedGestureDetector> {
                         width: widget.size.dx,
                         height: widget.size.dy,
                         color: widget.color,
-                        child: Text('$lvl'));
+                        child: Text('${LogicHelper.toDbm(lvl)}'));
                   }
                 }
               );

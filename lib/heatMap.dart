@@ -39,8 +39,8 @@ class HeatMap extends CustomPainter {
     LogicHelper.getIntercectedObsts(obstList, pos, router.state.position).forEach((obst) {
       lvl -= obst.signalLossCoeff;
     });
-    double maxLvl = router.wifiLvl.toDouble();
-    double minLvl = -127;
+    double maxLvl = router.wifiLvl;
+    double minLvl = LogicHelper.toWatt(-127);
 
     if (lvl < minLvl) lvl = minLvl;
 

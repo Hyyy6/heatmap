@@ -150,9 +150,10 @@ class SchemePageState extends State<SchemePage> {
     super.initState();
   }
 
-  Future<int> _asyncInputWifiLvlDialog(BuildContext context) async {
-    int wifiLvl = await WiFiLvlProvider.getWifiLevel();
-    return showDialog<int>(
+  Future<double> _asyncInputWifiLvlDialog(BuildContext context) async {
+    int wifiLvlDbm = await WiFiLvlProvider.getWifiLevel();
+    double wifiLvlWatt = LogicHelper.toWatt(wifiLvlDbm);
+    return showDialog<double>(
       context: context,
       barrierDismissible: false,
       // dialog is dismissible with a tap on the barrier
@@ -164,7 +165,7 @@ class SchemePageState extends State<SchemePage> {
               new Expanded(
                 child: FlatButton(
                     color: Colors.blueAccent,
-                    child: Text('$wifiLvl'),
+                    child: Text('$wifiLvlDbm'),
                     onPressed: () {}),
               ),
               new Expanded(
@@ -172,7 +173,7 @@ class SchemePageState extends State<SchemePage> {
                 autofocus: true,
                 decoration: new InputDecoration(labelText: 'WiFi Level'),
                 onChanged: (value) {
-                  wifiLvl = int.parse(value);
+                  wifiLvlWatt = LogicHelper.toWatt(int.parse(value));
                 },
               ))
             ],
@@ -181,7 +182,7 @@ class SchemePageState extends State<SchemePage> {
             FlatButton(
               child: Text('Ok'),
               onPressed: () {
-                Navigator.of(context).pop(wifiLvl);
+                Navigator.of(context).pop(wifiLvlWatt);
               },
             ),
           ],
@@ -315,6 +316,11 @@ class SchemePageState extends State<SchemePage> {
         .firstWhere((point) => point.key.toString() == routerKey)
         .wifiLvl
         .toDouble();
+
+    //
+    //routerLvl = LogicHelper.toWatt(routerLvl.toInt());
+    //
+
     int n = pointList.length;
     List<Tuple2<double, double>> xyPairArr = [];
     xyPairArr.add(Tuple2<double, double>(0, routerLvl));
@@ -419,6 +425,12 @@ void calibrateObstacles(PointsBloc pointsBloc, ObstacleBloc obstacleBloc) {
       .firstWhere((point) => point.key.toString() == routerKey)
       .wifiLvl
       .toDouble();
+
+  //
+  //routerLvl = LogicHelper.toWatt(routerLvl.toInt());
+  //
+
+
   pointList.removeWhere(
       (point) => point.key.toString() == routerKey); //list w\o router
   pointList.sort((Point a, Point b) => LogicHelper.calcDistance(
@@ -477,7 +489,7 @@ class MyMapState extends State<MyMap> {
                           builder: (BuildContext context, ratio) {
                             print(pointList);
                             Point router = pointList.firstWhere((point) => point.key.toString() == _pointsBloc.routerKey);
-                            int routerLvl = router.wifiLvl;
+                            double routerLvl = router.wifiLvl;
                             List<Widget> widgetList = [];
                             //widgetList.a
                             if (modelState.engageHeatmap == false) {
@@ -536,8 +548,8 @@ class MyMapState extends State<MyMap> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: <Widget>[
-                                      Text('$routerLvl'),
-                                      Text('${(routerLvl - 127)/2}'),
+                                      Text('${LogicHelper.toDbm(routerLvl)}'),
+                                      Text('${(LogicHelper.toDbm(routerLvl) - 127)/2}'),
                                       Text('-127')
                                     ]
                                   ),
@@ -639,5 +651,16 @@ class LogicHelper {
       }
     }
     return result;
+  }
+
+  static double toWatt(int wifiLvl) {
+    return pow(10, wifiLvl/10);
+  }
+
+  static int toDbm(double wifiLvl) {
+    var res = log(wifiLvl);
+    res = res/log(10);
+    res *= 10;
+    return res.toInt();
   }
 }
